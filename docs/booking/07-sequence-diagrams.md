@@ -1,6 +1,6 @@
 # EHUB-507 — Sequence Diagrams
 
-**Status:** Draft for sign-off.
+**Status:** APPROVED WITH MINOR CHANGES (Architect 2026-07-19). Soft Hold + 12h/15m TTLs.
 
 ## 1. Create booking (host approval)
 
@@ -22,9 +22,9 @@ sequenceDiagram
     App-->>API: 409
     API-->>Customer: ProblemDetails
   else OK
-    App->>Booking: Create → PendingOwnerApproval
+    App->>Booking: Create → Soft Hold POA (+12h, Number, Snapshot)
     App->>Outbox: BookingCreated
-    App-->>API: 201 BookingId
+    App-->>API: 201 BookingId + BookingNumber
     API-->>Customer: 201
     Outbox-->>Host: Notify host (async)
   end
@@ -43,7 +43,7 @@ sequenceDiagram
   participant Provider
 
   Owner->>API: PATCH .../approve
-  API->>Booking: Approve → PendingPayment
+  API->>Booking: Approve → Hard Hold PP (start 15m timer)
   Booking->>Outbox: BookingApproved
   Outbox-->>Payment: Create pending payment
   Outbox-->>Customer: Pay link / notify

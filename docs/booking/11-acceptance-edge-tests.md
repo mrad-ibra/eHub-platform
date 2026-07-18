@@ -1,24 +1,26 @@
-# EHUB-500…510 companion — Acceptance, Edge Cases, Test Scenarios
+# Companion — Acceptance, Edge Cases, Test Scenarios
 
-**Status:** Draft for sign-off. Used as Sprint 5.1 QA gate.  
-**Source of truth for rules:** [00-business-rules.md](00-business-rules.md), [10-failure-scenarios.md](10-failure-scenarios.md).
+**Status:** APPROVED WITH MINOR CHANGES (Architect 2026-07-19).  
+**Sources:** [00-business-rules.md](00-business-rules.md), [10-failure-scenarios.md](10-failure-scenarios.md).
 
 ---
 
-## Acceptance Criteria (pack-level)
+## Acceptance Criteria
 
 | ID | Criterion |
 |----|-----------|
-| AC-01 | Creating two overlapping blocking bookings on the same Asset is impossible (API returns 409). |
-| AC-02 | PendingOwnerApproval and PendingPayment block calendar until terminal non-blocking status. |
-| AC-03 | POA older than 24h and PP older than 30m become Expired via job; calendar frees. |
-| AC-04 | Host can reject only from PendingOwnerApproval with a reason. |
-| AC-05 | Unit/total price on Booking is frozen at create; Asset price change does not mutate Booking. |
-| AC-06 | Asset status stays Published during rental; occupancy is booking-derived. |
-| AC-07 | POST /bookings with same Idempotency-Key returns the same BookingId. |
-| AC-08 | Payment failures never leave a Confirmed booking without a successful Payment. |
-| AC-09 | Domain events for status changes are written in the same transaction (outbox). |
-| AC-10 | Design pack signed before any Booking C# code lands. |
+| AC-01 | Overlapping Soft/Hard Hold or committed bookings on same Asset → 409. |
+| AC-02 | Soft Hold (`PendingOwnerApproval`) and Hard Hold (`PendingPayment`) block calendar (+ buffer). |
+| AC-03 | POA > **12h** or PP > **15m** → `Expired`; hold released. |
+| AC-04 | Payment timer starts only on Approve (or Instant Book create). |
+| AC-05 | Host reject only from POA with reason; Soft Hold released. |
+| AC-06 | Price frozen at create; Asset price change does not mutate Booking. |
+| AC-07 | Asset stays Published; occupancy is booking/hold/buffer-derived. |
+| AC-08 | Buffer default 1 day; request on buffer day → 409. |
+| AC-09 | `BookingNumber` assigned (`BK-yyyy-…`); unique. |
+| AC-10 | AssetSnapshot + BookingTerms captured at create; immutable. |
+| AC-11 | Idempotent POST → same BookingId/Number. |
+| AC-12 | Domain events + outbox in same TX as status change. |
 
 ---
 
@@ -26,58 +28,56 @@
 
 | ID | Case | Expected |
 |----|------|----------|
-| E01 | StartDate = EndDate (1-day rental) | Allowed if MinRentalDays ≤ 1 |
-| E02 | Request ends on day existing booking starts | Reject (inclusive overlap) |
-| E03 | Adjacent: existing ends 5 Jul, request starts 6 Jul | Accept |
-| E04 | Owner blackout + free booking days | Accept only if no intersection with blackout |
-| E05 | Renter books own asset | 403 |
-| E06 | Instant Book on (future) | Skip POA → PendingPayment |
-| E07 | Extend by 0 days | Validation fail |
-| E08 | Extend into blackout | 409 |
-| E09 | Cancel in Draft (if used) | Allowed → Cancelled |
-| E10 | Approve after TTL already Expired | 409 / invalid transition |
-| E11 | Concurrent approve + expire | One wins; other gets invalid transition |
-| E12 | Multi-currency Asset change after create | Booking keeps original CurrencyId |
+| E01 | 1-day rental | OK if MinRentalDays ≤ 1 |
+| E02 | 1–5 vs 5–10 | Reject (inclusive) |
+| E03 | 1–5 buffer 0, request 6–8 | Accept |
+| E04 | 1–5 buffer 1, request 6–8 | Reject |
+| E05 | 1–5 buffer 1, request 7–9 | Accept |
+| E06 | Soft Hold active, second create same dates | 409 |
+| E07 | Soft Hold expired, second create | Accept |
+| E08 | Own asset | 403 |
+| E09 | Instant Book | Skip Soft Hold → PP 15m |
+| E10 | Approve after 12h Expired | Invalid transition |
+| E11 | Snapshot after Asset rename | Old name on booking |
+| E12 | BufferDays = 0 on Asset | Adjacent day 6 allowed after 1–5 |
 
 ---
 
-## Test Scenarios (Sprint 5.1 mapping)
+## Test Scenarios (Sprint 5.1)
 
-### Unit (Domain)
-
-| T | Scenario |
-|---|----------|
-| U01 | BookingPeriod rejects End < Start |
-| U02 | Overlap helper: partial / full / adjacent |
-| U03 | Illegal transition throws (e.g. Rejected → Confirmed) |
-| U04 | Approve from POA → PendingPayment + expiresAt set to +30m |
-| U05 | Expire from POA/PP → Expired |
-| U06 | Price snapshot immutable after create |
-
-### Application / Integration
+### Unit
 
 | T | Scenario |
 |---|----------|
-| I01 | Create → POA; second create overlapping → 409 |
-| I02 | Idempotent create replay |
-| I03 | Host approve → PP; payment confirm → Confirmed |
-| I04 | Host reject → Rejected; third party can book same dates |
-| I05 | Expire job frees dates |
-| I06 | Concurrent creates under load → exactly one success |
-| I07 | Failure F01–F04 from EHUB-510 |
+| U01 | Period End < Start rejected |
+| U02 | Inclusive overlap + buffer occupied end |
+| U03 | Illegal transitions |
+| U04 | Approve → PP + ExpiresAt = now+**15m** |
+| U05 | Create → ExpiresAt = now+**12h** |
+| U06 | Price + Snapshot + Terms immutable |
+| U07 | BookingNumber format |
 
-### API contract tests
+### Integration
 
 | T | Scenario |
 |---|----------|
-| A01 | POST without Idempotency-Key → 400 |
-| A02 | PATCH approve as non-host → 403 |
-| A03 | GET mine returns only caller’s bookings |
+| I01 | Soft Hold blocks second booking |
+| I02 | Expire 12h frees dates |
+| I03 | Approve then expire 15m frees dates |
+| I04 | Buffer day conflict |
+| I05 | Concurrent creates → one success |
+| I06 | F01–F08, F20–F23, F60–F61 |
+
+### API
+
+| T | Scenario |
+|---|----------|
+| A01 | Missing Idempotency-Key → 400 |
+| A02 | GET by BookingNumber |
+| A03 | Response includes snapshot + bookingNumber + bufferDays |
 
 ---
 
 ## Sign-off
 
-- [ ] AC-01…10 accepted  
-- [ ] Edge list accepted  
-- [ ] Test matrix sufficient to start Sprint 5.1
+- [x] AC / edges / tests updated for Soft Hold, TTL, Buffer, Snapshot, Number

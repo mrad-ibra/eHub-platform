@@ -1,7 +1,6 @@
 # EHUB-506 — Booking Domain Events
 
-**Status:** Draft for sign-off.  
-**Transport:** Outbox (same TX as Booking write). Consumers must be idempotent.
+**Status:** APPROVED (Architect 2026-07-19).
 
 ## Event catalog
 

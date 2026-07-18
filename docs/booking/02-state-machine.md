@@ -1,54 +1,54 @@
 # EHUB-502 — Booking State Machine
 
-**Status:** Draft for sign-off.
+**Status:** APPROVED WITH MINOR CHANGES (Architect 2026-07-19).
 
 ## Statuses
 
-| Code | Blocking availability? | Terminal? |
-|------|------------------------|-----------|
-| `Draft` | No | No (optional; may skip in API) |
-| `PendingOwnerApproval` | **Yes** | No |
-| `PendingPayment` | **Yes** | No |
-| `Confirmed` | **Yes** | No |
-| `Rejected` | No | **Yes** |
-| `Cancelled` | No | **Yes** |
-| `Expired` | No | **Yes** |
-| `InProgress` | **Yes** | No |
-| `Completed` | No | **Yes** |
-| `Refunded` | No | **Yes** (or sub-state of Cancelled — v1 keep separate) |
-
-Align Catalog `BookingStatus` seed codes with these values (replace current PENDING/CONFIRMED/… seed when implementing).
+| Code | Hold | Blocking availability? | Terminal? |
+|------|------|------------------------|-----------|
+| `Draft` | — | No | No (optional; may skip in API) |
+| `PendingOwnerApproval` | Soft Hold | **Yes** | No |
+| `PendingPayment` | Hard Hold | **Yes** | No |
+| `Confirmed` | Committed | **Yes** | No |
+| `Rejected` | Released | No | **Yes** |
+| `Cancelled` | Released | No | **Yes** |
+| `Expired` | Released | No | **Yes** |
+| `InProgress` | Committed | **Yes** | No |
+| `Completed` | Released | No | **Yes** |
+| `Refunded` | — | No | **Yes** |
 
 ## Transition diagram
 
 ```mermaid
 stateDiagram-v2
-  [*] --> PendingOwnerApproval: Create (InstantBook=false)
-  [*] --> PendingPayment: Create (InstantBook=true)
+  [*] --> PendingOwnerApproval: Create (InstantBook=false) SoftHold+12h
+  [*] --> PendingPayment: Create (InstantBook=true) HardHold+15m
 
-  PendingOwnerApproval --> PendingPayment: HostApprove
-  PendingOwnerApproval --> Rejected: HostReject
-  PendingOwnerApproval --> Expired: TTL 24h
-  PendingOwnerApproval --> Cancelled: RenterCancel
+  PendingOwnerApproval --> PendingPayment: HostApprove start 15m timer
+  PendingOwnerApproval --> Rejected: HostReject release
+  PendingOwnerApproval --> Expired: TTL 12h release
+  PendingOwnerApproval --> Cancelled: RenterCancel release
 
   PendingPayment --> Confirmed: PaymentSucceeded
-  PendingPayment --> Expired: TTL 30m / PaymentFailed
-  PendingPayment --> Cancelled: RenterCancel
+  PendingPayment --> Expired: TTL 15m / PaymentFailed release
+  PendingPayment --> Cancelled: RenterCancel release
 
-  Confirmed --> InProgress: RentalStart (scheduler or host/renter confirm)
+  Confirmed --> InProgress: RentalStart
   Confirmed --> Cancelled: CancelBeforeStart
   Confirmed --> Confirmed: Extend
 
   InProgress --> Completed: RentalEnd
   InProgress --> InProgress: Extend
-  InProgress --> Cancelled: ExceptionalCancel (policy)
+  InProgress --> Cancelled: ExceptionalCancel
 
-  Cancelled --> Refunded: RefundCompleted (Payment)
+  Cancelled --> Refunded: RefundCompleted
   Completed --> [*]
   Rejected --> [*]
   Expired --> [*]
   Refunded --> [*]
 ```
+
+**Critical:** Payment TTL does **not** run during Soft Hold. Timer starts only on `HostApprove` (or Instant Book create).
 
 ## Allowed transitions matrix
 
@@ -61,18 +61,17 @@ stateDiagram-v2
 | Cancelled | | | | | — | | | | ✓ |
 | Others terminal | | | | | | | | | |
 
-\* Extend keeps status, updates period.  
-† Exceptional only — product must confirm.
+\* Extend keeps status, updates period (+ buffer re-check).  
+† Exceptional only.
 
 ## Illegal examples
 
-- `Completed` → `Confirmed`  
-- `Rejected` → `PendingPayment`  
+- Payment timer starting at create when InstantBook=false  
 - `Expired` → `Confirmed` without new booking  
 - Host `Approve` from `Confirmed`
 
 ## Sign-off
 
-- [ ] Status list locked  
-- [ ] TTL transitions locked  
-- [ ] Extend stays in place confirmed
+- [x] Status list locked  
+- [x] TTL 12h / 15m locked  
+- [x] Payment timer after Approve locked

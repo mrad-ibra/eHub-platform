@@ -48,8 +48,8 @@ Swagger is available in Development. See [docs/api.md](docs/api.md).
 | Phase | Focus | Status |
 | --- | --- | --- |
 | **Current** | Identity, Catalog, Assets, docs/ADR, Localization project | In progress |
-| **Next** | **Sprint 5.0 — Booking Domain Design** ([docs/booking/](docs/booking/README.md)) — zero code; architect sign-off | In progress |
-| **Soon** | Sprint 5.1 Booking implementation; EF Core; Payment; Outbox/Inbox; optimistic concurrency | Blocked on 5.0 |
+| **Next** | **Sprint 5.1 — Booking implementation** (Create Booking + Soft Hold + availability). Design pack signed. | Ready |
+| **Soon** | Payment aggregate; Outbox/Inbox hardening; EF Core persistence for Booking | Planned |
 | **Later** | Notification, GPS, Chat (SignalR), Search abstraction → OpenSearch | Planned |
 | **Ops** | OpenTelemetry, rate limiting, compose.prod hardening, Dependabot/CodeQL | Planned |
 

@@ -1,46 +1,53 @@
 # EHUB-504 — Availability Strategy
 
-**Status:** Draft for sign-off.  
-**Hardest part of the engine.** Goal: no double booking.
+**Status:** APPROVED WITH MINOR CHANGES (Architect 2026-07-19).  
+**Hardest part of the engine.** Goal: no double booking + Soft Hold UX + preparation buffer.
 
 ## Inputs
 
-1. **Asset availability blocks** (`AssetAvailability`) — owner blackouts  
-2. **Blocking bookings** on same AssetId  
-3. **Requested period** `BookingPeriod`
+1. **Asset availability blocks** — owner blackouts  
+2. **Blocking bookings** (Soft Hold / Hard Hold / Confirmed / InProgress)  
+3. **Requested period** `BookingPeriod`  
+4. **BufferDays** per booking (snapshot) / Asset default
 
-## Overlap definition
-
-Periods A and B overlap iff:
+## Overlap definition (inclusive)
 
 ```text
 A.StartDate <= B.EndDate AND A.EndDate >= B.StartDate
 ```
 
-(inclusive calendar days — BR-BKG-002)
+### Occupied range (with buffer)
+
+```text
+OccupiedStart = Booking.StartDate
+OccupiedEnd   = Booking.EndDate + Booking.BufferDays
+```
+
+Conflict if request overlaps `[OccupiedStart, OccupiedEnd]` inclusive.
 
 ### Examples
 
-| Existing | Request | Result |
-|----------|---------|--------|
-| 1–5 Jul | 1–5 Jul | **Reject** (full) |
-| 1–5 Jul | 3–6 Jul | **Reject** (partial) |
-| 1–5 Jul | 6–8 Jul | **Accept** (no shared day) |
-| 1–5 Jul | 5–5 Jul | **Reject** (touch on end day) |
-| 1–5 Jul PendingPayment | 3–4 Jul | **Reject** (pending holds) |
-| 1–5 Jul Cancelled | 3–4 Jul | **Accept** |
-| 1–5 Jul + owner block 4–4 | 1–3 Jul | **Accept** |
-| 1–5 Jul + owner block 4–4 | 3–5 Jul | **Reject** (hits block) |
+| Existing | Buffer | Request | Result |
+|----------|--------|---------|--------|
+| 1–5 Jul | 0 | 1–5 Jul | **Reject** (full) |
+| 1–5 Jul | 0 | 3–6 Jul | **Reject** (partial) |
+| 1–5 Jul | 0 | 5–10 Jul | **Reject** (touch day 5) |
+| 1–5 Jul | 0 | 6–8 Jul | **Accept** |
+| 1–5 Jul | **1** | 6–8 Jul | **Reject** (day 6 = buffer) |
+| 1–5 Jul | **1** | 7–9 Jul | **Accept** |
+| 1–5 Soft Hold (POA) | 1 | 3–4 Jul | **Reject** |
+| 1–5 Cancelled | 1 | 3–4 Jul | **Accept** |
+
+## Soft Hold (pending)
+
+`PendingOwnerApproval` and `PendingPayment` **block** like committed bookings for conflict checks.  
+Prevents Owner receiving three overlapping requests for the same slot.
+
+On Expired/Rejected/Cancelled → occupied range released.
 
 ## Partial vs full overlap
 
-**No distinction for v1.** Any overlap with a blocking source → reject.  
-No “partial accept” / split bookings.
-
-## Pending overlap
-
-Pending (`PendingOwnerApproval`, `PendingPayment`) **counts as blocking**.  
-Customer B cannot steal days while Customer A waits for host/payment.
+No distinction for v1. Any overlap with occupied range → reject.
 
 ## Check algorithm (logical)
 
@@ -55,22 +62,22 @@ function CanBook(assetId, period):
   for block in asset.Availability.Blocks:
     if block.Overlaps(period): deny(AssetBlocked)
 
-  for booking in Bookings.FindBlocking(assetId, period):
-    deny(BookingConflict)
+  bufferDefault = asset.PreparationBufferDays ?? platformDefault(1)
+
+  for booking in Bookings.FindBlocking(assetId):
+    occupied = [booking.Start, booking.End + booking.BufferDays]
+    if period.Overlaps(occupied): deny(BookingConflict)
+
+  // Also: new booking's own buffer must not collide with neighbors
+  // (symmetric check when comparing against existing Start)
 
   allow
 ```
 
-`FindBlocking` filters statuses in blocking set and applies overlap predicate.  
-Must run inside the same concurrency boundary as insert (EHUB-505).
-
-## Race window
-
-Two parallel `CanBook` both allow → both insert.  
-Mitigations: optimistic version on Asset **or** DB exclusion constraint / transaction serialization — see EHUB-505.
+Must run inside concurrency boundary (EHUB-505).
 
 ## Sign-off
 
-- [ ] Inclusive overlap examples accepted  
-- [ ] Pending holds calendar accepted  
-- [ ] No partial booking accepted
+- [x] Inclusive overlap accepted  
+- [x] Soft Hold accepted  
+- [x] Buffer (default 1 day) accepted

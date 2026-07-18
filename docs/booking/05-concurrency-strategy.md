@@ -1,6 +1,6 @@
 # EHUB-505 — Concurrency Strategy
 
-**Status:** Draft for sign-off.
+**Status:** APPROVED (Architect 2026-07-19) — optimistic first; Soft Hold under same concurrency rules.
 
 ## Chosen approach (v1)
 
@@ -42,7 +42,7 @@ Or application-level: `UPDLOCK`-style serializable transaction on asset row.
 
 ```text
 IdempotencyKey + UserId → BookingId (or hash of request body)
-TTL >= PendingPayment TTL
+TTL >= max(Approval TTL 12h, Payment TTL 15m)
 ```
 
 ## Distributed lock (phase 2 criteria)

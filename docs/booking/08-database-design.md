@@ -1,6 +1,7 @@
 # EHUB-508 — Database Design
 
-**Status:** Logical model for Sprint 5.1 persistence. No migrations this sprint.
+**Status:** APPROVED WITH MINOR CHANGES (Architect 2026-07-19).  
+Logical model for Sprint 5.1. No migrations this sprint.
 
 ## ER overview
 
@@ -13,16 +14,20 @@ erDiagram
   Booking ||--o| BookingDriver : has
   Booking ||--o| BookingDelivery : has
   Booking ||--o{ BookingAttachment : has
+  Booking ||--o| BookingAssetSnapshot : has
+  Booking ||--o| BookingTerms : has
   Booking ||--o| Payment : "PaymentId optional"
   Booking ||--o{ OutboxMessage : emits
 
   Booking {
     uuid Id PK
+    string BookingNumber UK
     uuid AssetId FK
     uuid RenterId FK
     uuid HostId
     date StartDate
     date EndDate
+    int BufferDays
     string Status
     decimal UnitAmount
     uuid CurrencyId
@@ -31,6 +36,23 @@ erDiagram
     timestamptz ConfirmedAtUtc
     int Version
     timestamptz CreatedAtUtc
+  }
+
+  BookingAssetSnapshot {
+    uuid BookingId PK_FK
+    string Name
+    string Brand
+    string Model
+    string PrimaryImageUrlsJson
+    string HostDisplayName
+    timestamptz CapturedAtUtc
+  }
+
+  BookingTerms {
+    uuid BookingId PK_FK
+    int MinRentalDays
+    int MaxRentalDays
+    string RulesJson
   }
 
   BookingStatusHistory {
@@ -50,60 +72,31 @@ erDiagram
     uuid ActorId
     timestamptz AtUtc
   }
-
-  BookingDriver {
-    uuid BookingId PK_FK
-    bool Requested
-    decimal FeeAmount
-  }
-
-  BookingDelivery {
-    uuid BookingId PK_FK
-    bool Requested
-    decimal FeeAmount
-    string AddressLine
-  }
-
-  BookingAttachment {
-    uuid Id PK
-    uuid BookingId FK
-    string Url
-    string Kind
-  }
-
-  Payment {
-    uuid Id PK
-    uuid BookingId FK
-    string Status
-    decimal Amount
-    uuid CurrencyId
-  }
 ```
 
 ## Tables (logical)
 
 | Table | Notes |
 |-------|--------|
-| `Bookings` | Aggregate root row + period + money snapshot + status |
-| `BookingStatusHistory` | Append-only transitions |
+| `Bookings` | Root + period + BufferDays + money + status + BookingNumber + Version |
+| `BookingAssetSnapshots` | Frozen asset display at create |
+| `BookingTerms` | Frozen rental rules at create |
+| `BookingStatusHistory` | Audit: Created → Approved → Rejected → Paid → Started → … |
 | `BookingTimeline` | Product-facing timeline |
-| `BookingDrivers` | 0..1 | Optional driver add-on snapshot |
-| `BookingDeliveries` | 0..1 | Optional delivery snapshot |
-| `BookingAttachments` | Docs/photos related to booking |
-| `Payments` | **Other aggregate** — listed for FK clarity |
-| `OutboxMessages` | Shared infra |
-| `IdempotencyKeys` | Create booking dedupe |
+| `BookingDrivers` / `BookingDeliveries` / `BookingAttachments` | Optional children |
+| `Payments` | Other aggregate |
+| `OutboxMessages` / `IdempotencyKeys` | Infra |
 
-## Indexes (required at EF time)
+## Indexes
 
+- `BookingNumber` UNIQUE  
 - `(AssetId, StartDate, EndDate)`  
-- `(AssetId, Status)` filtered where blocking  
-- `(RenterId, CreatedAtUtc DESC)`  
-- `(HostId, Status)`  
-- `(ExpiresAtUtc)` where status in pending  
-- Exclusion / range constraint for blocking overlaps (PostgreSQL)
+- `(AssetId, Status)` filtered blocking  
+- `(RenterId, CreatedAtUtc DESC)` / `(HostId, Status)`  
+- `(ExpiresAtUtc)` where pending  
+- Exclusion/range for occupied ranges including buffer (EF sprint)
 
 ## Sign-off
 
-- [ ] Table list approved  
-- [ ] Payment separate table approved
+- [x] Number + Snapshot + Terms tables approved  
+- [x] Payment separate approved

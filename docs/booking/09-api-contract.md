@@ -1,9 +1,12 @@
-# EHUB-509 — API Contract (draft)
+# EHUB-509 — API Contract
+
+**Status:** APPROVED WITH MINOR CHANGES (Architect 2026-07-19).
 
 **Base:** `/api/v1/bookings`  
 **Auth:** JWT unless noted.  
 **Errors:** RFC 7807 ProblemDetails.  
-**Idempotency:** `Idempotency-Key` required on `POST /`.
+**Idempotency:** `Idempotency-Key` required on `POST /`.  
+**Lookup:** `{id}` may be GUID or `BookingNumber` (`BK-2026-…`) where noted.
 
 ## Endpoints
 
@@ -46,14 +49,26 @@ Headers: `Idempotency-Key: <string>`
 ```json
 {
   "id": "uuid",
+  "bookingNumber": "BK-2026-000000123",
   "status": "PendingOwnerApproval",
+  "holdType": "SoftHold",
   "assetId": "uuid",
   "startDate": "2026-08-01",
   "endDate": "2026-08-05",
+  "bufferDays": 1,
   "total": { "amount": 500.00, "currencyId": "uuid" },
-  "expiresAtUtc": "2026-08-02T12:00:00Z"
+  "expiresAtUtc": "2026-08-01T12:00:00Z",
+  "snapshot": {
+    "name": "BMW X5",
+    "brand": "BMW",
+    "model": "X5",
+    "primaryImageUrl": "https://..."
+  },
+  "version": 1
 }
 ```
+
+`expiresAtUtc` on create = now + **12h** (Soft Hold). After approve, response shows now + **15m**.
 
 ### Errors
 

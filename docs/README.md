@@ -18,7 +18,7 @@
 
 **Design-first development:** for Booking (and later critical modules), lock Business Rules, Domain Model, State Machine, Sequences, ER, API Contract, Acceptance Criteria, Edge Cases, Failure Scenarios, and Test Scenarios — **then** code.
 
-**Sprint 5.0** = design only (zero Booking code).  
-**Sprint 5.1** = implementation — **blocked** until [booking/](booking/README.md) is signed off.
+**Sprint 5.0** = design only — **APPROVED WITH MINOR CHANGES**.  
+**Sprint 5.1** = implementation — **green light** (see [booking/](booking/README.md)).
 
 Especially for **Booking** (transactions, concurrency, availability) and **Payment** (separate aggregate).

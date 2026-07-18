@@ -32,7 +32,7 @@ Living document. Expand before each domain sprint. Error codes live in `eHub.Loc
 | AST-07 | Availability blocks cannot overlap |
 | AST-08 | Mutate media/pricing/availability only through the Asset root |
 
-## Booking (Sprint 5.0 design — see [booking/](booking/README.md))
+## Booking (Sprint 5.0 — APPROVED WITH MINOR CHANGES; see [booking/](booking/README.md))
 
 Canonical detail: `docs/booking/00-business-rules.md` (BR-BKG-*). Summary:
 
@@ -40,14 +40,14 @@ Canonical detail: `docs/booking/00-business-rules.md` (BR-BKG-*). Summary:
 |----|------|
 | BKG-01 | Booking is its own aggregate (not nested in Asset) |
 | BKG-02 | Inclusive calendar-day overlap rejected for blocking statuses |
-| BKG-03 | PendingOwnerApproval / PendingPayment **do** hold availability |
-| BKG-04 | TTL: 24h approval, 30m payment → Expired (not Cancelled) |
+| BKG-03 | Soft Hold: PendingOwnerApproval temporarily reserves dates (+ buffer) |
+| BKG-04 | TTL: **12h** approval, **15m** payment (timer starts only after Approve) → Expired |
 | BKG-05 | Host may reject only from PendingOwnerApproval (reason required) |
-| BKG-06 | Instant Book off by default (v1); price frozen at create |
-| BKG-07 | Asset stays Published; occupancy derived from bookings |
-| BKG-08 | Create is idempotent (`Idempotency-Key`) |
-| BKG-09 | Optimistic concurrency first; exclusion constraint at EF time |
-| BKG-10 | Side effects via domain events + outbox |
+| BKG-06 | Instant Book off by default; price frozen at create |
+| BKG-07 | Asset stays Published; occupancy = holds + bookings + buffers |
+| BKG-08 | Preparation Buffer default 1 day (owner-configurable) |
+| BKG-09 | BookingNumber (`BK-yyyy-…`), AssetSnapshot, BookingTerms, Version |
+| BKG-10 | Create idempotent; optimistic concurrency first; events + outbox |
 
 ## Payment (planned)
 

@@ -1,63 +1,73 @@
 # EHUB-503 — Booking Lifecycle
 
-**Status:** Draft for sign-off.
+**Status:** APPROVED WITH MINOR CHANGES (Architect 2026-07-19).
 
 ## Happy path (host approval)
 
 ```text
 Customer creates booking
         ↓
-Availability check (blocks + blocking bookings + asset published)
+Availability check (blocks + Soft/Hard Holds + buffers + published)
         ↓
-Booking = PendingOwnerApproval (hold calendar, ExpiresAt = now+24h)
+Booking = PendingOwnerApproval
+  Soft Hold on dates (+ buffer)
+  ExpiresAt = now + 12h
+  BookingNumber assigned
+  AssetSnapshot + BookingTerms captured
         ↓
 Owner Approval
         ↓
-Booking = PendingPayment (ExpiresAt = now+30m)
+Booking = PendingPayment
+  Hard Hold continues
+  ExpiresAt = now + 15m   ← payment timer starts HERE
         ↓
-Payment succeeds (Payment aggregate + inbox/outbox)
+Payment succeeds
         ↓
 Booking = Confirmed
         ↓
-Rental starts (StartDate reached / check-in)
+Rental starts → InProgress
         ↓
-Booking = InProgress
+Rental ends → Completed
         ↓
-Rental ends
-        ↓
-Booking = Completed
-        ↓
-Review (future module — event only)
+Review (future — event only)
+```
+
+## Soft Hold release paths
+
+```text
+POA Soft Hold → Rejected | Expired (12h) | Cancelled  →  calendar released
+PP Hard Hold  → Expired (15m) | Cancelled             →  calendar released
 ```
 
 ## Instant Book path
 
 ```text
-Create → PendingPayment → Confirmed → InProgress → Completed
+Create → PendingPayment (15m from create) → Confirmed → InProgress → Completed
 ```
 
 ## Side paths
 
 | Path | Flow |
 |------|------|
-| Host rejects | POA → Rejected |
+| Host rejects | POA → Rejected (release Soft Hold) |
 | Renter cancels early | POA/PP/Confirmed → Cancelled |
-| TTL | POA/PP → Expired |
-| Payment fails | PP → Expired (or Cancelled — prefer Expired) |
-| Extend | Confirmed/InProgress + new EndDate |
-| Refund | Cancelled → Refunded after Payment completes refund |
+| TTL | POA 12h / PP 15m → Expired |
+| Payment fails | PP → Expired |
+| Extend | Confirmed/InProgress + new EndDate (re-check buffer) |
+| Refund | Cancelled → Refunded after Payment |
 
 ## Responsibilities by step
 
 | Step | Owner component |
 |------|-----------------|
-| Availability | Booking domain service + Asset read (Id) + booking repo query |
+| Availability + buffer | Booking domain service + Asset read + booking repo |
+| Soft/Hard Hold | Booking aggregate status |
 | Approve/Reject | Booking aggregate |
 | Charge | Payment aggregate |
-| Notify | Outbox → Notification handlers |
-| Review | Future Reviews module on `BookingCompleted` |
+| Notify | Outbox → Notification |
+| Review | Future module on `BookingCompleted` |
 
 ## Sign-off
 
-- [ ] Happy path agreed  
-- [ ] Instant Book path agreed
+- [x] Happy path + Soft Hold agreed  
+- [x] Payment timer after Approve agreed
