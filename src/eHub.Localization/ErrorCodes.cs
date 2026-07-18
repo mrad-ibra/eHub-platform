@@ -48,4 +48,19 @@ public static class ErrorCodes
     public const string AssetArchived = nameof(AssetArchived);
     public const string AssetAccessDenied = nameof(AssetAccessDenied);
     public const string AssetStatusCodeInvalid = nameof(AssetStatusCodeInvalid);
+    public const string MoneyAmountInvalid = nameof(MoneyAmountInvalid);
+    public const string MoneyCurrencyMismatch = nameof(MoneyCurrencyMismatch);
+    public const string BookingStatusCodeInvalid = nameof(BookingStatusCodeInvalid);
+    public const string BookingPeriodInvalid = nameof(BookingPeriodInvalid);
+    public const string BookingBufferInvalid = nameof(BookingBufferInvalid);
+    public const string BookingRentalDaysInvalid = nameof(BookingRentalDaysInvalid);
+    public const string BookingOwnAsset = nameof(BookingOwnAsset);
+    public const string BookingConflict = nameof(BookingConflict);
+    public const string BookingAssetNotBookable = nameof(BookingAssetNotBookable);
+    public const string BookingPricingRequired = nameof(BookingPricingRequired);
+    public const string BookingInvalidStatusTransition = nameof(BookingInvalidStatusTransition);
+    public const string BookingAccessDenied = nameof(BookingAccessDenied);
+    public const string BookingReasonTooLong = nameof(BookingReasonTooLong);
+    public const string BookingNotExpiredYet = nameof(BookingNotExpiredYet);
+    public const string BookingIdempotencyKeyRequired = nameof(BookingIdempotencyKeyRequired);
 }

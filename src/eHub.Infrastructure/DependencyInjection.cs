@@ -1,5 +1,7 @@
 using eHub.Application.Abstractions.Email;
 using eHub.Application.Assets.Abstractions;
+using eHub.Application.Bookings.Abstractions;
+using eHub.Application.Bookings.Services;
 using eHub.Application.Catalog.Abstractions;
 using eHub.Application.Common.Persistence;
 using eHub.Application.Common.Time;
@@ -26,6 +28,10 @@ public static class DependencyInjection
         services.AddSingleton<IRefreshTokenRepository, InMemoryRefreshTokenRepository>();
         services.AddSingleton<ILoginHistoryRepository, InMemoryLoginHistoryRepository>();
         services.AddSingleton<IAssetRepository, InMemoryAssetRepository>();
+        services.AddSingleton<IBookingRepository, InMemoryBookingRepository>();
+        services.AddSingleton<IBookingNumberGenerator, InMemoryBookingNumberGenerator>();
+        services.AddSingleton<IBookingIdempotencyStore, InMemoryBookingIdempotencyStore>();
+        services.AddSingleton<BookingAvailabilityService>();
         services.AddSingleton<IUnitOfWork, InMemoryUnitOfWork>();
         AddCatalogRepositories(services);
         services.AddHostedService<AuthSeedHostedService>();

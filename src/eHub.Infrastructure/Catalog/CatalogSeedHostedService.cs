@@ -134,10 +134,16 @@ public sealed class CatalogSeedHostedService(
             PaymentMethod.Create("BANK_TRANSFER", "Bank Transfer", now, 3));
 
         await SeedAsync(bookingStatuses.AddAsync, cancellationToken,
-            BookingStatus.Create("PENDING", "Pending", now, 1),
-            BookingStatus.Create("CONFIRMED", "Confirmed", now, 2),
-            BookingStatus.Create("CANCELLED", "Cancelled", now, 3),
-            BookingStatus.Create("COMPLETED", "Completed", now, 4));
+            BookingStatus.Create("DRAFT", "Draft", now, 1),
+            BookingStatus.Create("PENDING_OWNER_APPROVAL", "Pending Owner Approval", now, 2),
+            BookingStatus.Create("PENDING_PAYMENT", "Pending Payment", now, 3),
+            BookingStatus.Create("CONFIRMED", "Confirmed", now, 4),
+            BookingStatus.Create("REJECTED", "Rejected", now, 5),
+            BookingStatus.Create("CANCELLED", "Cancelled", now, 6),
+            BookingStatus.Create("EXPIRED", "Expired", now, 7),
+            BookingStatus.Create("IN_PROGRESS", "In Progress", now, 8),
+            BookingStatus.Create("COMPLETED", "Completed", now, 9),
+            BookingStatus.Create("REFUNDED", "Refunded", now, 10));
 
         await SeedAsync(assetStatuses.AddAsync, cancellationToken,
             AssetStatus.Create(AssetStatusCode.Draft, "Draft", now, 1),

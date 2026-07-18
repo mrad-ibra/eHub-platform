@@ -147,4 +147,49 @@
   <data name="AssetStatusCodeInvalid" xml:space="preserve">
     <value>Naməlum aktiv status kodu.</value>
   </data>
+  <data name="MoneyAmountInvalid" xml:space="preserve">
+    <value>Məbləğ sıfır və ya daha böyük olmalıdır.</value>
+  </data>
+  <data name="MoneyCurrencyMismatch" xml:space="preserve">
+    <value>Məbləğlər eyni valyutada olmalıdır.</value>
+  </data>
+  <data name="BookingStatusCodeInvalid" xml:space="preserve">
+    <value>Naməlum bron status kodu.</value>
+  </data>
+  <data name="BookingPeriodInvalid" xml:space="preserve">
+    <value>Bronun bitmə tarixi başlama tarixindən əvvəl ola bilməz.</value>
+  </data>
+  <data name="BookingBufferInvalid" xml:space="preserve">
+    <value>Hazırlıq buffer günləri mənfi ola bilməz.</value>
+  </data>
+  <data name="BookingRentalDaysInvalid" xml:space="preserve">
+    <value>İcarə müddəti icazə verilən min/max gün aralığından kənardır.</value>
+  </data>
+  <data name="BookingOwnAsset" xml:space="preserve">
+    <value>Öz aktivinizi bron edə bilməzsiniz.</value>
+  </data>
+  <data name="BookingConflict" xml:space="preserve">
+    <value>Seçilmiş tarixlər üçün aktiv əlçatan deyil.</value>
+  </data>
+  <data name="BookingAssetNotBookable" xml:space="preserve">
+    <value>Yalnız dərc olunmuş aktivlər bron edilə bilər.</value>
+  </data>
+  <data name="BookingPricingRequired" xml:space="preserve">
+    <value>Bron yaratmaq üçün aktivin qiyməti tələb olunur.</value>
+  </data>
+  <data name="BookingInvalidStatusTransition" xml:space="preserve">
+    <value>Bu bron status keçidi icazə verilmir.</value>
+  </data>
+  <data name="BookingAccessDenied" xml:space="preserve">
+    <value>Bu brona giriş icazəniz yoxdur.</value>
+  </data>
+  <data name="BookingReasonTooLong" xml:space="preserve">
+    <value>Səbəb ən çox 1000 simvol ola bilər.</value>
+  </data>
+  <data name="BookingNotExpiredYet" xml:space="preserve">
+    <value>Bronun vaxtı hələ bitməyib.</value>
+  </data>
+  <data name="BookingIdempotencyKeyRequired" xml:space="preserve">
+    <value>Idempotency-Key başlığı tələb olunur.</value>
+  </data>
 </root>

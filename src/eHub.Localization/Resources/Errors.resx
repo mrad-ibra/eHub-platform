@@ -147,4 +147,49 @@
   <data name="AssetStatusCodeInvalid" xml:space="preserve">
     <value>Unknown asset status code.</value>
   </data>
+  <data name="MoneyAmountInvalid" xml:space="preserve">
+    <value>Money amount must be zero or greater.</value>
+  </data>
+  <data name="MoneyCurrencyMismatch" xml:space="preserve">
+    <value>Money amounts must use the same currency.</value>
+  </data>
+  <data name="BookingStatusCodeInvalid" xml:space="preserve">
+    <value>Unknown booking status code.</value>
+  </data>
+  <data name="BookingPeriodInvalid" xml:space="preserve">
+    <value>Booking end date must be on or after the start date.</value>
+  </data>
+  <data name="BookingBufferInvalid" xml:space="preserve">
+    <value>Preparation buffer days cannot be negative.</value>
+  </data>
+  <data name="BookingRentalDaysInvalid" xml:space="preserve">
+    <value>Requested rental length is outside allowed min/max days.</value>
+  </data>
+  <data name="BookingOwnAsset" xml:space="preserve">
+    <value>You cannot book your own asset.</value>
+  </data>
+  <data name="BookingConflict" xml:space="preserve">
+    <value>The asset is not available for the selected dates.</value>
+  </data>
+  <data name="BookingAssetNotBookable" xml:space="preserve">
+    <value>Only published assets can be booked.</value>
+  </data>
+  <data name="BookingPricingRequired" xml:space="preserve">
+    <value>Asset pricing is required to create a booking.</value>
+  </data>
+  <data name="BookingInvalidStatusTransition" xml:space="preserve">
+    <value>This booking status transition is not allowed.</value>
+  </data>
+  <data name="BookingAccessDenied" xml:space="preserve">
+    <value>You do not have access to this booking.</value>
+  </data>
+  <data name="BookingReasonTooLong" xml:space="preserve">
+    <value>Reason must be 1000 characters or fewer.</value>
+  </data>
+  <data name="BookingNotExpiredYet" xml:space="preserve">
+    <value>Booking has not reached its expiry time yet.</value>
+  </data>
+  <data name="BookingIdempotencyKeyRequired" xml:space="preserve">
+    <value>Idempotency-Key header is required.</value>
+  </data>
 </root>

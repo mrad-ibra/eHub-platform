@@ -1,38 +1,43 @@
 # EHUB-506 — Booking Domain Events
 
-**Status:** APPROVED (Architect 2026-07-19).
+**Status:** APPROVED — naming **LOCKED** (Architect 2026-07-19).  
+**Transport:** Outbox (same TX as Booking write). Consumers must be idempotent.
 
-## Event catalog
+## Naming convention (locked)
 
-| Event | When | Typical consumers |
-|-------|------|-------------------|
-| `BookingCreated` | Request created (POA or PP) | Notify host/renter, analytics |
-| `BookingApproved` | Host approve → PP | Notify renter, start payment |
-| `BookingRejected` | Host reject | Notify renter |
-| `BookingCancelled` | Actor cancel | Payment refund saga, notify |
-| `BookingExpired` | TTL job | Notify, free calendar (implicit) |
-| `BookingPaymentPending` | Enter PP (optional if Created covers Instant Book) | Payment module |
-| `BookingConfirmed` | Payment OK | Notify both, calendar solid |
-| `BookingStarted` | → InProgress | Notify, ops |
-| `BookingCompleted` | → Completed | Review module, notify |
-| `BookingExtended` | Period extended | Notify, pricing snapshot update |
-| `BookingRefunded` | Refund settled | Notify |
+PascalCase past tense: `{Aggregate}{PastTenseVerb}`
 
-Minimum required for v1:  
-`BookingCreated`, `BookingApproved`, `BookingRejected`, `BookingCancelled`, `BookingExpired`, `BookingConfirmed`, `BookingStarted`, `BookingCompleted`, `BookingExtended`, `BookingRefunded`.
+Do **not** rename after Sprint 5.1. No prefixes like `I`, no `On`, no `Event` suffix on type names used in outbox payloads (CLR types may end with `DomainEvent` if needed for clarity in code).
+
+### Locked catalog (v1)
+
+| Event name | When |
+|------------|------|
+| `BookingCreated` | Request created (Soft Hold POA or Instant Book PP) |
+| `BookingApproved` | Host approve → PendingPayment |
+| `BookingRejected` | Host reject |
+| `BookingCancelled` | Actor cancel |
+| `BookingExpired` | TTL job |
+| `BookingConfirmed` | Payment succeeded |
+| `BookingStarted` | → InProgress |
+| `BookingCompleted` | → Completed |
+| `BookingExtended` | Period extended |
+| `BookingRefunded` | Refund settled |
+
+Optional later (not required day one): `BookingPaymentPending` — Instant Book may rely on `BookingCreated` with status PP.
 
 ## Payload guidelines
 
-- Include: `BookingId`, `AssetId`, `RenterId`, `HostId`, `Period`, `Status`, `OccurredAtUtc`  
+- `BookingId`, `BookingNumber`, `AssetId`, `RenterId`, `HostId`, `Period`, `Status`, `OccurredAtUtc`  
 - Money as snapshot  
-- No PII beyond what Notification needs (email resolved by Identity consumer)
+- No SMTP / payment provider calls inside event handlers’ domain layer
 
 ## Non-goals
 
-- Events must not embed SMTP send  
-- Payment provider calls happen in Payment handlers after reading outbox/inbox
+- Events must not embed email send  
+- Payment provider calls happen in Payment handlers after outbox/inbox
 
 ## Sign-off
 
-- [ ] Event list locked for v1  
-- [ ] Outbox mandatory approved
+- [x] Event list locked for v1  
+- [x] Outbox mandatory approved
