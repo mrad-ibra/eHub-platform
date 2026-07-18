@@ -5,7 +5,6 @@ using eHub.Application.Common.Messaging;
 using eHub.Application.Common.Persistence;
 using eHub.Application.Common.Time;
 using eHub.Domain.Assets;
-using eHub.Domain.Catalog;
 using eHub.Domain.Exceptions;
 using eHub.Domain.Resources;
 using FluentValidation;
@@ -24,7 +23,8 @@ public sealed class CreateAssetCommandValidator : AbstractValidator<CreateAssetC
 public sealed class CreateAssetCommandHandler(
     ICurrentUser currentUser,
     IAssetRepository assets,
-    ICatalogStore catalog,
+    ICategoryRepository categories,
+    ISubCategoryRepository subCategories,
     IClock clock,
     IUnitOfWork unitOfWork) : ICommandHandler<CreateAssetCommand, Guid>
 {
@@ -32,12 +32,12 @@ public sealed class CreateAssetCommandHandler(
     {
         var ownerId = currentUser.RequireUserId();
 
-        _ = await catalog.GetByIdAsync<Category>(request.CategoryId, cancellationToken)
+        _ = await categories.GetByIdAsync(request.CategoryId, cancellationToken)
             ?? throw new NotFoundException(ErrorResources.Get(ErrorCodes.CatalogItemNotFound));
 
         if (request.SubCategoryId is { } subId)
         {
-            var sub = await catalog.GetByIdAsync<SubCategory>(subId, cancellationToken)
+            var sub = await subCategories.GetByIdAsync(subId, cancellationToken)
                 ?? throw new NotFoundException(ErrorResources.Get(ErrorCodes.CatalogItemNotFound));
             if (sub.CategoryId != request.CategoryId)
             {

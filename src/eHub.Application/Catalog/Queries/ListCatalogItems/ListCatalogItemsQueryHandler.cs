@@ -6,7 +6,29 @@ using eHub.Domain.Resources;
 
 namespace eHub.Application.Catalog.Queries.ListCatalogItems;
 
-public sealed class ListCatalogItemsQueryHandler(ICatalogStore catalog)
+public sealed class ListCatalogItemsQueryHandler(
+    ICategoryRepository categories,
+    ISubCategoryRepository subCategories,
+    IBrandRepository brands,
+    IModelRepository models,
+    ICountryRepository countries,
+    ICityRepository cities,
+    IDistrictRepository districts,
+    ICurrencyRepository currencies,
+    ILanguageRepository languages,
+    ITransmissionRepository transmissions,
+    IFuelTypeRepository fuelTypes,
+    IVehicleTypeRepository vehicleTypes,
+    IEquipmentTypeRepository equipmentTypes,
+    IFeatureDefinitionRepository features,
+    IColorRepository colors,
+    IDocumentTypeRepository documentTypes,
+    IMediaTypeRepository mediaTypes,
+    IRentalPeriodTypeRepository rentalPeriodTypes,
+    IPaymentMethodRepository paymentMethods,
+    IBookingStatusRepository bookingStatuses,
+    IAssetStatusRepository assetStatuses,
+    IReviewStatusRepository reviewStatuses)
     : IQueryHandler<ListCatalogItemsQuery, IReadOnlyList<CatalogItemDto>>
 {
     public async Task<IReadOnlyList<CatalogItemDto>> Handle(
@@ -15,116 +37,122 @@ public sealed class ListCatalogItemsQueryHandler(ICatalogStore catalog)
     {
         return request.Kind switch
         {
-            CatalogKind.Category => await MapFlat<Category>(request.ActiveOnly, cancellationToken),
-            CatalogKind.SubCategory => await MapChildren<SubCategory>(
-                request.ActiveOnly,
-                request.ParentId,
-                x => x.CategoryId,
-                cancellationToken),
-            CatalogKind.Brand => await MapFlat<Brand>(request.ActiveOnly, cancellationToken),
-            CatalogKind.Model => await MapChildren<Model>(
-                request.ActiveOnly,
-                request.ParentId,
-                x => x.BrandId,
-                cancellationToken),
-            CatalogKind.Country => await MapFlat<Country>(request.ActiveOnly, cancellationToken),
-            CatalogKind.City => await MapChildren<City>(
-                request.ActiveOnly,
-                request.ParentId,
-                x => x.CountryId,
-                cancellationToken),
-            CatalogKind.District => await MapChildren<District>(
-                request.ActiveOnly,
-                request.ParentId,
-                x => x.CityId,
-                cancellationToken),
-            CatalogKind.Currency => await MapCurrencies(request.ActiveOnly, cancellationToken),
-            CatalogKind.Language => await MapLanguages(request.ActiveOnly, cancellationToken),
-            CatalogKind.Transmission => await MapFlat<Transmission>(request.ActiveOnly, cancellationToken),
-            CatalogKind.FuelType => await MapFlat<FuelType>(request.ActiveOnly, cancellationToken),
-            CatalogKind.VehicleType => await MapFlat<VehicleType>(request.ActiveOnly, cancellationToken),
-            CatalogKind.EquipmentType => await MapFlat<EquipmentType>(request.ActiveOnly, cancellationToken),
-            CatalogKind.FeatureDefinition => await MapFeatures(request.ActiveOnly, cancellationToken),
-            CatalogKind.Color => await MapColors(request.ActiveOnly, cancellationToken),
-            CatalogKind.DocumentType => await MapFlat<DocumentType>(request.ActiveOnly, cancellationToken),
-            CatalogKind.MediaType => await MapFlat<MediaType>(request.ActiveOnly, cancellationToken),
-            CatalogKind.RentalPeriodType => await MapFlat<RentalPeriodType>(request.ActiveOnly, cancellationToken),
-            CatalogKind.PaymentMethod => await MapFlat<PaymentMethod>(request.ActiveOnly, cancellationToken),
-            CatalogKind.BookingStatus => await MapFlat<BookingStatus>(request.ActiveOnly, cancellationToken),
-            CatalogKind.AssetStatus => await MapFlat<AssetStatus>(request.ActiveOnly, cancellationToken),
-            CatalogKind.ReviewStatus => await MapFlat<ReviewStatus>(request.ActiveOnly, cancellationToken),
+            CatalogKind.Category => Map(
+                await categories.ListAsync(request.ActiveOnly, cancellationToken)),
+            CatalogKind.SubCategory => MapChildren(
+                request.ParentId is null
+                    ? await subCategories.ListAsync(request.ActiveOnly, cancellationToken)
+                    : await subCategories.ListByCategoryIdAsync(
+                        request.ParentId.Value,
+                        request.ActiveOnly,
+                        cancellationToken),
+                x => x.CategoryId),
+            CatalogKind.Brand => Map(
+                await brands.ListAsync(request.ActiveOnly, cancellationToken)),
+            CatalogKind.Model => MapChildren(
+                request.ParentId is null
+                    ? await models.ListAsync(request.ActiveOnly, cancellationToken)
+                    : await models.ListByBrandIdAsync(
+                        request.ParentId.Value,
+                        request.ActiveOnly,
+                        cancellationToken),
+                x => x.BrandId),
+            CatalogKind.Country => Map(
+                await countries.ListAsync(request.ActiveOnly, cancellationToken)),
+            CatalogKind.City => MapChildren(
+                request.ParentId is null
+                    ? await cities.ListAsync(request.ActiveOnly, cancellationToken)
+                    : await cities.ListByCountryIdAsync(
+                        request.ParentId.Value,
+                        request.ActiveOnly,
+                        cancellationToken),
+                x => x.CountryId),
+            CatalogKind.District => MapChildren(
+                request.ParentId is null
+                    ? await districts.ListAsync(request.ActiveOnly, cancellationToken)
+                    : await districts.ListByCityIdAsync(
+                        request.ParentId.Value,
+                        request.ActiveOnly,
+                        cancellationToken),
+                x => x.CityId),
+            CatalogKind.Currency => MapCurrencies(
+                await currencies.ListAsync(request.ActiveOnly, cancellationToken)),
+            CatalogKind.Language => MapLanguages(
+                await languages.ListAsync(request.ActiveOnly, cancellationToken)),
+            CatalogKind.Transmission => Map(
+                await transmissions.ListAsync(request.ActiveOnly, cancellationToken)),
+            CatalogKind.FuelType => Map(
+                await fuelTypes.ListAsync(request.ActiveOnly, cancellationToken)),
+            CatalogKind.VehicleType => Map(
+                await vehicleTypes.ListAsync(request.ActiveOnly, cancellationToken)),
+            CatalogKind.EquipmentType => Map(
+                await equipmentTypes.ListAsync(request.ActiveOnly, cancellationToken)),
+            CatalogKind.FeatureDefinition => MapFeatures(
+                await features.ListAsync(request.ActiveOnly, cancellationToken)),
+            CatalogKind.Color => MapColors(
+                await colors.ListAsync(request.ActiveOnly, cancellationToken)),
+            CatalogKind.DocumentType => Map(
+                await documentTypes.ListAsync(request.ActiveOnly, cancellationToken)),
+            CatalogKind.MediaType => Map(
+                await mediaTypes.ListAsync(request.ActiveOnly, cancellationToken)),
+            CatalogKind.RentalPeriodType => Map(
+                await rentalPeriodTypes.ListAsync(request.ActiveOnly, cancellationToken)),
+            CatalogKind.PaymentMethod => Map(
+                await paymentMethods.ListAsync(request.ActiveOnly, cancellationToken)),
+            CatalogKind.BookingStatus => Map(
+                await bookingStatuses.ListAsync(request.ActiveOnly, cancellationToken)),
+            CatalogKind.AssetStatus => Map(
+                await assetStatuses.ListAsync(request.ActiveOnly, cancellationToken)),
+            CatalogKind.ReviewStatus => Map(
+                await reviewStatuses.ListAsync(request.ActiveOnly, cancellationToken)),
             _ => throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.BadRequest))
         };
     }
 
-    private async Task<IReadOnlyList<CatalogItemDto>> MapFlat<T>(
-        bool activeOnly,
-        CancellationToken cancellationToken)
-        where T : CatalogEntity
-    {
-        var items = await catalog.ListAsync<T>(activeOnly, cancellationToken);
-        return items
+    private static IReadOnlyList<CatalogItemDto> Map(IEnumerable<CatalogEntity> items)
+        => items
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.Name)
             .Select(x => ToDto(x))
             .ToArray();
-    }
 
-    private async Task<IReadOnlyList<CatalogItemDto>> MapChildren<T>(
-        bool activeOnly,
-        Guid? parentId,
-        Func<T, Guid> parentSelector,
-        CancellationToken cancellationToken)
+    private static IReadOnlyList<CatalogItemDto> MapChildren<T>(
+        IEnumerable<T> items,
+        Func<T, Guid> parentSelector)
         where T : CatalogEntity
-    {
-        var items = await catalog.ListAsync<T>(activeOnly, cancellationToken);
-        return items
-            .Where(x => parentId is null || parentSelector(x) == parentId)
+        => items
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.Name)
             .Select(x => ToDto(x, parentSelector(x)))
             .ToArray();
-    }
 
-    private async Task<IReadOnlyList<CatalogItemDto>> MapCurrencies(bool activeOnly, CancellationToken ct)
-    {
-        var items = await catalog.ListAsync<Currency>(activeOnly, ct);
-        return items
+    private static IReadOnlyList<CatalogItemDto> MapCurrencies(IEnumerable<Currency> items)
+        => items
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.Name)
             .Select(x => ToDto(x, symbol: x.Symbol, decimalPlaces: x.DecimalPlaces))
             .ToArray();
-    }
 
-    private async Task<IReadOnlyList<CatalogItemDto>> MapLanguages(bool activeOnly, CancellationToken ct)
-    {
-        var items = await catalog.ListAsync<Language>(activeOnly, ct);
-        return items
+    private static IReadOnlyList<CatalogItemDto> MapLanguages(IEnumerable<Language> items)
+        => items
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.Name)
             .Select(x => ToDto(x, cultureName: x.CultureName))
             .ToArray();
-    }
 
-    private async Task<IReadOnlyList<CatalogItemDto>> MapFeatures(bool activeOnly, CancellationToken ct)
-    {
-        var items = await catalog.ListAsync<FeatureDefinition>(activeOnly, ct);
-        return items
+    private static IReadOnlyList<CatalogItemDto> MapFeatures(IEnumerable<FeatureDefinition> items)
+        => items
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.Name)
             .Select(x => ToDto(x, groupCode: x.GroupCode))
             .ToArray();
-    }
 
-    private async Task<IReadOnlyList<CatalogItemDto>> MapColors(bool activeOnly, CancellationToken ct)
-    {
-        var items = await catalog.ListAsync<Color>(activeOnly, ct);
-        return items
+    private static IReadOnlyList<CatalogItemDto> MapColors(IEnumerable<Color> items)
+        => items
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.Name)
             .Select(x => ToDto(x, hexCode: x.HexCode))
             .ToArray();
-    }
 
     private static CatalogItemDto ToDto(
         CatalogEntity entity,

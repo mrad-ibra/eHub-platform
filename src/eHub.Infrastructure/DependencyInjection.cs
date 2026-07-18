@@ -25,12 +25,39 @@ public static class DependencyInjection
         services.AddSingleton<IUserRepository, InMemoryUserRepository>();
         services.AddSingleton<IRefreshTokenRepository, InMemoryRefreshTokenRepository>();
         services.AddSingleton<ILoginHistoryRepository, InMemoryLoginHistoryRepository>();
-        services.AddSingleton<ICatalogStore, InMemoryCatalogStore>();
         services.AddSingleton<IAssetRepository, InMemoryAssetRepository>();
         services.AddSingleton<IUnitOfWork, InMemoryUnitOfWork>();
+        AddCatalogRepositories(services);
         services.AddHostedService<AuthSeedHostedService>();
         services.AddHostedService<CatalogSeedHostedService>();
 
         return services;
+    }
+
+    private static void AddCatalogRepositories(IServiceCollection services)
+    {
+        services.AddSingleton<InMemoryCatalogPersistence>();
+        services.AddSingleton<ICategoryRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<ISubCategoryRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<IBrandRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<IModelRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<ICountryRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<ICityRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<IDistrictRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<ICurrencyRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<ILanguageRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<ITransmissionRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<IFuelTypeRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<IVehicleTypeRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<IEquipmentTypeRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<IFeatureDefinitionRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<IColorRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<IDocumentTypeRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<IMediaTypeRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<IRentalPeriodTypeRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<IPaymentMethodRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<IBookingStatusRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<IAssetStatusRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
+        services.AddSingleton<IReviewStatusRepository>(sp => sp.GetRequiredService<InMemoryCatalogPersistence>());
     }
 }

@@ -13,7 +13,8 @@ public sealed class CreateAssetCommandHandlerTests
 {
     private readonly ICurrentUser _currentUser = Substitute.For<ICurrentUser>();
     private readonly IAssetRepository _assets = Substitute.For<IAssetRepository>();
-    private readonly ICatalogStore _catalog = Substitute.For<ICatalogStore>();
+    private readonly ICategoryRepository _categories = Substitute.For<ICategoryRepository>();
+    private readonly ISubCategoryRepository _subCategories = Substitute.For<ISubCategoryRepository>();
     private readonly IClock _clock = Substitute.For<IClock>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly DateTime _now = new(2026, 7, 18, 12, 0, 0, DateTimeKind.Utc);
@@ -24,14 +25,20 @@ public sealed class CreateAssetCommandHandlerTests
     {
         _clock.UtcNow.Returns(_now);
         _currentUser.RequireUserId().Returns(_ownerId);
-        _catalog.GetByIdAsync<Category>(_categoryId, Arg.Any<CancellationToken>())
+        _categories.GetByIdAsync(_categoryId, Arg.Any<CancellationToken>())
             .Returns(Category.Create("VEHICLE", "Vehicles", _now));
     }
 
     [Fact]
     public async Task Handle_CreatesAssetForCurrentUser()
     {
-        var handler = new CreateAssetCommandHandler(_currentUser, _assets, _catalog, _clock, _unitOfWork);
+        var handler = new CreateAssetCommandHandler(
+            _currentUser,
+            _assets,
+            _categories,
+            _subCategories,
+            _clock,
+            _unitOfWork);
 
         var id = await handler.Handle(
             new CreateAssetCommand(_categoryId, "My Asset"),

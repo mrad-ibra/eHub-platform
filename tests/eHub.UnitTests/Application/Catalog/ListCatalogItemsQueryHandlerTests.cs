@@ -1,3 +1,4 @@
+using eHub.Application.Catalog.Abstractions;
 using eHub.Application.Catalog.Queries.ListCatalogItems;
 using eHub.Domain.Catalog;
 using eHub.Infrastructure.Persistence;
@@ -11,15 +12,15 @@ public sealed class ListCatalogItemsQueryHandlerTests
     [Fact]
     public async Task Handle_FiltersSubCategoriesByParent()
     {
-        var store = new InMemoryCatalogStore();
+        var catalog = new InMemoryCatalogPersistence();
         var vehicles = Category.Create("VEHICLE", "Vehicles", Now);
         var equipment = Category.Create("EQUIPMENT", "Equipment", Now);
-        await store.AddAsync(vehicles);
-        await store.AddAsync(equipment);
-        await store.AddAsync(SubCategory.Create(vehicles.Id, "CAR", "Car", Now));
-        await store.AddAsync(SubCategory.Create(equipment.Id, "EXCAVATOR", "Excavator", Now));
+        await ((ICategoryRepository)catalog).AddAsync(vehicles);
+        await ((ICategoryRepository)catalog).AddAsync(equipment);
+        await ((ISubCategoryRepository)catalog).AddAsync(SubCategory.Create(vehicles.Id, "CAR", "Car", Now));
+        await ((ISubCategoryRepository)catalog).AddAsync(SubCategory.Create(equipment.Id, "EXCAVATOR", "Excavator", Now));
 
-        var handler = new ListCatalogItemsQueryHandler(store);
+        var handler = CreateHandler(catalog);
         var result = await handler.Handle(
             new ListCatalogItemsQuery(CatalogKind.SubCategory, vehicles.Id),
             CancellationToken.None);
@@ -32,10 +33,10 @@ public sealed class ListCatalogItemsQueryHandlerTests
     [Fact]
     public async Task Handle_ReturnsCurrencyExtras()
     {
-        var store = new InMemoryCatalogStore();
-        await store.AddAsync(Currency.Create("AZN", "Manat", "₼", Now));
+        var catalog = new InMemoryCatalogPersistence();
+        await ((ICurrencyRepository)catalog).AddAsync(Currency.Create("AZN", "Manat", "₼", Now));
 
-        var handler = new ListCatalogItemsQueryHandler(store);
+        var handler = CreateHandler(catalog);
         var result = await handler.Handle(
             new ListCatalogItemsQuery(CatalogKind.Currency),
             CancellationToken.None);
@@ -44,4 +45,29 @@ public sealed class ListCatalogItemsQueryHandlerTests
         result[0].Symbol.Should().Be("₼");
         result[0].DecimalPlaces.Should().Be(2);
     }
+
+    private static ListCatalogItemsQueryHandler CreateHandler(InMemoryCatalogPersistence catalog)
+        => new(
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog,
+            catalog);
 }
