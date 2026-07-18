@@ -32,15 +32,22 @@ Living document. Expand before each domain sprint. Error codes live in `eHub.Loc
 | AST-07 | Availability blocks cannot overlap |
 | AST-08 | Mutate media/pricing/availability only through the Asset root |
 
-## Booking (planned)
+## Booking (Sprint 5.0 design — see [booking/](booking/README.md))
+
+Canonical detail: `docs/booking/00-business-rules.md` (BR-BKG-*). Summary:
 
 | ID | Rule |
 |----|------|
 | BKG-01 | Booking is its own aggregate (not nested in Asset) |
-| BKG-02 | Conflicting date ranges on the same asset are rejected |
-| BKG-03 | Create is idempotent given client idempotency key |
-| BKG-04 | Optimistic concurrency on Asset/Booking version |
-| BKG-05 | Side effects (email, analytics) via domain events + outbox |
+| BKG-02 | Inclusive calendar-day overlap rejected for blocking statuses |
+| BKG-03 | PendingOwnerApproval / PendingPayment **do** hold availability |
+| BKG-04 | TTL: 24h approval, 30m payment → Expired (not Cancelled) |
+| BKG-05 | Host may reject only from PendingOwnerApproval (reason required) |
+| BKG-06 | Instant Book off by default (v1); price frozen at create |
+| BKG-07 | Asset stays Published; occupancy derived from bookings |
+| BKG-08 | Create is idempotent (`Idempotency-Key`) |
+| BKG-09 | Optimistic concurrency first; exclusion constraint at EF time |
+| BKG-10 | Side effects via domain events + outbox |
 
 ## Payment (planned)
 

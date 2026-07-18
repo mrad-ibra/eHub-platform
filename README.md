@@ -48,10 +48,10 @@ Swagger is available in Development. See [docs/api.md](docs/api.md).
 | Phase | Focus | Status |
 | --- | --- | --- |
 | **Current** | Identity, Catalog, Assets, docs/ADR, Localization project | In progress |
-| **Next** | EF Core + indexes + AsNoTracking; Booking domain design (BRS + sequences) | Planned |
-| **Soon** | Booking + Payment aggregates, Outbox, optimistic concurrency | Planned |
+| **Next** | **Sprint 5.0 — Booking Domain Design** ([docs/booking/](docs/booking/README.md)) — zero code; architect sign-off | In progress |
+| **Soon** | Sprint 5.1 Booking implementation; EF Core; Payment; Outbox/Inbox; optimistic concurrency | Blocked on 5.0 |
 | **Later** | Notification, GPS, Chat (SignalR), Search abstraction → OpenSearch | Planned |
-| **Ops** | OpenTelemetry, compose.prod hardening, Idempotency keys | Planned |
+| **Ops** | OpenTelemetry, rate limiting, compose.prod hardening, Dependabot/CodeQL | Planned |
 
 ### Future modules (must stay separate)
 
@@ -62,7 +62,7 @@ Swagger is available in Development. See [docs/api.md](docs/api.md).
 
 ## Development rules
 
-1. Before a sprint: lock Aggregate / VOs / Domain Events / business rules, then code.
+1. Design-first: Business Rules → Domain Model → State Machine → Sequences → ER → API → AC / edges / failures / tests → then code.
 2. Controllers stay thin; business rules live in Domain.
 3. Cross-aggregate references are **Id-only** (no navigations on domain models).
 4. Keep `Asset` lean via internal components; new concerns → new component or new module.

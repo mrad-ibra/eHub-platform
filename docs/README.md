@@ -10,8 +10,15 @@
 | [sequences.md](sequences.md) | Key flow diagrams |
 | [threat-model.md](threat-model.md) | Security threats & mitigations |
 | [performance-budget.md](performance-budget.md) | Latency & cache targets |
+| [booking/](booking/README.md) | **Sprint 5.0 gate** — Booking Domain Design pack (EHUB-500…510) |
+| [booking-technical-design.md](booking-technical-design.md) | Pointer → `booking/` (legacy path) |
 | [adr/](adr/README.md) | Architecture Decision Records |
 
 ## Sprint discipline
 
-Before implementing a sprint: agree Aggregate / Value Objects / Domain Events / business rules (update BRS), then code. Especially for **Booking** (transactions, concurrency, availability) and **Payment** (separate aggregate).
+**Design-first development:** for Booking (and later critical modules), lock Business Rules, Domain Model, State Machine, Sequences, ER, API Contract, Acceptance Criteria, Edge Cases, Failure Scenarios, and Test Scenarios — **then** code.
+
+**Sprint 5.0** = design only (zero Booking code).  
+**Sprint 5.1** = implementation — **blocked** until [booking/](booking/README.md) is signed off.
+
+Especially for **Booking** (transactions, concurrency, availability) and **Payment** (separate aggregate).
