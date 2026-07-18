@@ -1,7 +1,22 @@
 # EPIC 5 — Booking Engine
 
 **Sprint 5.0:** CLOSED — Architecture **APPROVED** (2026-07-19)  
-**Sprint 5.1:** IN PROGRESS — Create Booking slice landed (Soft Hold, buffer, snapshot, number, `IClock`, locked events)
+**Sprint 5.1:** **APPROVED WITH COMMENTS** (2026-07-19) — overall **9.9/10**. Merge-ready.  
+**Review notes:** [12-sprint-51-review.md](12-sprint-51-review.md)
+
+### Architect review focus (going forward)
+
+Not method style — **domain growth decisions**, e.g.:
+
+- Which aggregate owns a concern?  
+- When does Review spawn?  
+- Refund after which event?  
+- Damage Report / Inspection boundaries?  
+- How does Payment Failure affect availability?
+
+Keep as-is for 5.1: Aggregate · CQRS · Handler · Validation · Snapshot · Idempotency · IClock.
+
+When Booking grows (Refund / Insurance / Inspection / …): extract internal components (`BookingLifecycle`, `BookingPricing`, `BookingFulfillment`, `BookingAudit`) — Asset pattern.
 
 | Task | Document | Status |
 |------|----------|--------|

@@ -157,4 +157,11 @@ public sealed class MoneyTests
         var total = unit.Multiply(3).Add(Money.Create(50m, currency));
         total.Amount.Should().Be(350m);
     }
+
+    [Fact]
+    public void RejectsExcessiveScale()
+    {
+        var act = () => Money.Create(1.12345m, Guid.NewGuid());
+        act.Should().Throw<ValidationFailedException>();
+    }
 }

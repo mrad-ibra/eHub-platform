@@ -29,7 +29,6 @@ public sealed class Booking : AggregateRoot
     public DriverOption Driver { get; private set; } = null!;
     public DeliveryOption Delivery { get; private set; } = null!;
     public BookingStatusCode Status { get; private set; } = BookingStatusCode.Draft;
-    public string StatusCode => Status.Value;
     public string? RejectionReason { get; private set; }
     public string? CancellationReason { get; private set; }
     public string? Notes { get; private set; }

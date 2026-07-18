@@ -22,6 +22,12 @@ public sealed class Money : IEquatable<Money>
             throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.MoneyAmountInvalid));
         }
 
+        // Marketplace amounts: at most 4 decimal places (currency catalog may tighten later).
+        if (decimal.Round(amount, 4) != amount)
+        {
+            throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.MoneyAmountInvalid));
+        }
+
         return new Money(amount, AppGuard.NotEmpty(currencyId, nameof(currencyId)));
     }
 

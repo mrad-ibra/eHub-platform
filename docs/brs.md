@@ -32,7 +32,7 @@ Living document. Expand before each domain sprint. Error codes live in `eHub.Loc
 | AST-07 | Availability blocks cannot overlap |
 | AST-08 | Mutate media/pricing/availability only through the Asset root |
 
-## Booking (Sprint 5.0 APPROVED; Sprint 5.1 Create Booking in progress — see [booking/](booking/README.md))
+## Booking (Sprint 5.0 + 5.1 Create Booking **APPROVED** — see [booking/](booking/README.md))
 
 Canonical detail: `docs/booking/00-business-rules.md` (BR-BKG-*). Summary:
 
