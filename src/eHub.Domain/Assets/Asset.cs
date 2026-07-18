@@ -1,12 +1,21 @@
 using eHub.Domain.Common;
-using eHub.Domain.Exceptions;
-using eHub.Domain.Resources;
 
 namespace eHub.Domain.Assets;
 
 /// <summary>
-/// Universal rentable item. Category-specific meaning comes from Catalog references —
+/// Universal rentable item aggregate root. Category-specific meaning comes from Catalog references —
 /// never create Car/Boat/Excavator root entities.
+/// <para>
+/// Complexity lives in internal components (<see cref="AssetLifecycle"/>, <see cref="AssetCommercialTerms"/>,
+/// <see cref="AssetMediaCollection"/>, <see cref="AssetAvailability"/>, <see cref="AssetAttributeCollection"/>).
+/// External callers mutate only through this root.
+/// </para>
+/// <para>
+/// <b>Catalog / Identity references are identity-only:</b> keep <see cref="CategoryId"/>, <see cref="BrandId"/>,
+/// <see cref="ModelId"/>, <see cref="OwnerId"/> (and location country/city ids) as <c>Guid</c> foreign keys.
+/// Do not add navigation properties to other aggregates or Catalog entities on this root — that couples
+/// aggregate boundaries. Resolve names via Application queries / read models when needed.
+/// </para>
 /// </summary>
 public sealed class Asset : SoftDeletableEntity
 {
@@ -17,32 +26,35 @@ public sealed class Asset : SoftDeletableEntity
     public Guid? ModelId { get; private set; }
     public string Title { get; private set; } = string.Empty;
     public string? Description { get; private set; }
-    public string StatusCode { get; private set; } = AssetStatusCodes.Draft;
-    public string? RejectionReason { get; private set; }
-    public int VersionNumber { get; private set; } = 1;
-    public DateTime? PublishedAtUtc { get; private set; }
-    public DateTime? ArchivedAtUtc { get; private set; }
 
-    public AssetPricing? Pricing { get; private set; }
-    public AssetLocation? Location { get; private set; }
-    public AssetRentalRules? RentalRules { get; private set; }
-    public AssetSecurityDeposit SecurityDeposit { get; private set; } = AssetSecurityDeposit.None();
-    public AssetSupportOptions SupportOptions { get; private set; } = AssetSupportOptions.Create();
+    public AssetLifecycle Lifecycle { get; private set; } = new();
+    public AssetCommercialTerms Commercial { get; private set; } = new();
+    public AssetMediaCollection MediaCollection { get; private set; } = new();
+    public AssetAvailability Availability { get; private set; } = new();
+    public AssetAttributeCollection Attributes { get; private set; } = new();
 
-    private readonly List<AssetMediaItem> _media = [];
-    private readonly List<AssetAvailabilityBlock> _availability = [];
-    private readonly List<AssetTag> _tags = [];
-    private readonly List<AssetFeature> _features = [];
-    private readonly List<AssetVersionEntry> _versions = [];
+    // Compatibility surface for queries / mapping (delegates to components).
+    public AssetStatusCode Status => Lifecycle.Status;
+    public string StatusCode => Lifecycle.Status.Value;
+    public string? RejectionReason => Lifecycle.RejectionReason;
+    public int VersionNumber => Lifecycle.VersionNumber;
+    public DateTime? PublishedAtUtc => Lifecycle.PublishedAtUtc;
+    public DateTime? ArchivedAtUtc => Lifecycle.ArchivedAtUtc;
 
-    public IReadOnlyCollection<AssetMediaItem> Media => _media.AsReadOnly();
-    public IReadOnlyCollection<AssetMediaItem> Images => _media.Where(m => m.Kind == AssetMediaKind.Image).ToList();
-    public IReadOnlyCollection<AssetMediaItem> Videos => _media.Where(m => m.Kind == AssetMediaKind.Video).ToList();
-    public IReadOnlyCollection<AssetMediaItem> Documents => _media.Where(m => m.Kind == AssetMediaKind.Document).ToList();
-    public IReadOnlyCollection<AssetAvailabilityBlock> AvailabilityBlocks => _availability.AsReadOnly();
-    public IReadOnlyCollection<AssetTag> Tags => _tags.AsReadOnly();
-    public IReadOnlyCollection<AssetFeature> Features => _features.AsReadOnly();
-    public IReadOnlyCollection<AssetVersionEntry> VersionHistory => _versions.AsReadOnly();
+    public AssetPricing? Pricing => Commercial.Pricing;
+    public AssetLocation? Location => Commercial.Location;
+    public AssetRentalRules? RentalRules => Commercial.RentalRules;
+    public AssetSecurityDeposit SecurityDeposit => Commercial.SecurityDeposit;
+    public AssetSupportOptions SupportOptions => Commercial.Support;
+
+    public IReadOnlyCollection<AssetMediaItem> Media => MediaCollection.Items;
+    public IReadOnlyCollection<AssetMediaItem> Images => MediaCollection.Images;
+    public IReadOnlyCollection<AssetMediaItem> Videos => MediaCollection.Videos;
+    public IReadOnlyCollection<AssetMediaItem> Documents => MediaCollection.Documents;
+    public IReadOnlyCollection<AssetAvailabilityBlock> AvailabilityBlocks => Availability.Blocks;
+    public IReadOnlyCollection<AssetTag> Tags => Attributes.Tags;
+    public IReadOnlyCollection<AssetFeature> Features => Attributes.Features;
+    public IReadOnlyCollection<AssetVersionEntry> VersionHistory => Lifecycle.VersionHistory;
 
     private Asset()
     {
@@ -68,13 +80,12 @@ public sealed class Asset : SoftDeletableEntity
             BrandId = NullIfEmpty(brandId),
             ModelId = NullIfEmpty(modelId),
             Title = AppGuard.NotEmpty(title, nameof(title)).Trim(),
-            Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
-            StatusCode = AssetStatusCodes.Draft,
-            VersionNumber = 1
+            Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim()
         };
 
-        asset.SetCreatedAudit(nowUtc, createdBy ?? ownerId);
-        asset.AddVersion(nowUtc, createdBy ?? ownerId, "Asset created");
+        var actor = createdBy ?? ownerId;
+        asset.SetCreatedAudit(nowUtc, actor);
+        asset.Lifecycle.RecordCreated(asset.Id, nowUtc, actor);
         return asset;
     }
 
@@ -99,35 +110,35 @@ public sealed class Asset : SoftDeletableEntity
     public void SetPricing(AssetPricing pricing, DateTime nowUtc, Guid? updatedBy = null)
     {
         EnsureEditable();
-        Pricing = pricing ?? throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.FieldRequired, nameof(pricing)));
+        Commercial.SetPricing(pricing);
         Touch(nowUtc, updatedBy, "Pricing updated");
     }
 
     public void SetLocation(AssetLocation location, DateTime nowUtc, Guid? updatedBy = null)
     {
         EnsureEditable();
-        Location = location ?? throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.FieldRequired, nameof(location)));
+        Commercial.SetLocation(location);
         Touch(nowUtc, updatedBy, "Location updated");
     }
 
     public void SetRentalRules(AssetRentalRules rules, DateTime nowUtc, Guid? updatedBy = null)
     {
         EnsureEditable();
-        RentalRules = rules ?? throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.FieldRequired, nameof(rules)));
+        Commercial.SetRentalRules(rules);
         Touch(nowUtc, updatedBy, "Rental rules updated");
     }
 
     public void SetSecurityDeposit(AssetSecurityDeposit deposit, DateTime nowUtc, Guid? updatedBy = null)
     {
         EnsureEditable();
-        SecurityDeposit = deposit ?? AssetSecurityDeposit.None();
+        Commercial.SetSecurityDeposit(deposit);
         Touch(nowUtc, updatedBy, "Security deposit updated");
     }
 
     public void SetSupportOptions(AssetSupportOptions options, DateTime nowUtc, Guid? updatedBy = null)
     {
         EnsureEditable();
-        SupportOptions = options ?? AssetSupportOptions.Create();
+        Commercial.SetSupport(options);
         Touch(nowUtc, updatedBy, "Support options updated");
     }
 
@@ -142,27 +153,7 @@ public sealed class Asset : SoftDeletableEntity
         Guid? updatedBy = null)
     {
         EnsureEditable();
-
-        if (isPrimary && kind == AssetMediaKind.Image)
-        {
-            foreach (var image in _media.Where(m => m.Kind == AssetMediaKind.Image))
-            {
-                image.SetPrimary(false);
-            }
-        }
-
-        var item = AssetMediaItem.Create(
-            Id,
-            kind,
-            url,
-            nowUtc,
-            fileName,
-            contentType,
-            sizeBytes,
-            _media.Count(m => m.Kind == kind),
-            isPrimary && kind == AssetMediaKind.Image);
-
-        _media.Add(item);
+        var item = MediaCollection.Add(Id, kind, url, nowUtc, fileName, contentType, sizeBytes, isPrimary);
         Touch(nowUtc, updatedBy, $"{kind} added");
         return item;
     }
@@ -170,9 +161,7 @@ public sealed class Asset : SoftDeletableEntity
     public void RemoveMedia(Guid mediaId, DateTime nowUtc, Guid? updatedBy = null)
     {
         EnsureEditable();
-        var item = _media.FirstOrDefault(m => m.Id == mediaId)
-            ?? throw new NotFoundException(ErrorResources.Get(ErrorCodes.AssetMediaNotFound));
-        _media.Remove(item);
+        MediaCollection.Remove(mediaId);
         Touch(nowUtc, updatedBy, "Media removed");
     }
 
@@ -184,15 +173,8 @@ public sealed class Asset : SoftDeletableEntity
         Guid? updatedBy = null)
     {
         EnsureNotDeleted();
-        EnsureNotArchived();
-
-        if (_availability.Any(block => block.Overlaps(startDate, endDate)))
-        {
-            throw new ConflictException(ErrorResources.Get(ErrorCodes.AssetAvailabilityOverlap));
-        }
-
-        var block = AssetAvailabilityBlock.Create(Id, startDate, endDate, nowUtc, note);
-        _availability.Add(block);
+        Lifecycle.EnsureNotArchived();
+        var block = Availability.Block(Id, startDate, endDate, nowUtc, note);
         SetUpdatedAudit(nowUtc, updatedBy);
         return block;
     }
@@ -200,177 +182,94 @@ public sealed class Asset : SoftDeletableEntity
     public void RemoveAvailabilityBlock(Guid blockId, DateTime nowUtc, Guid? updatedBy = null)
     {
         EnsureNotDeleted();
-        var block = _availability.FirstOrDefault(b => b.Id == blockId)
-            ?? throw new NotFoundException(ErrorResources.Get(ErrorCodes.AssetAvailabilityNotFound));
-        _availability.Remove(block);
+        Availability.Remove(blockId);
         SetUpdatedAudit(nowUtc, updatedBy);
     }
 
     public void AddTag(string tag, DateTime nowUtc, Guid? updatedBy = null)
     {
         EnsureEditable();
-        var normalized = AppGuard.NotEmpty(tag, nameof(tag)).Trim().ToLowerInvariant();
-        if (_tags.Any(t => t.Tag == normalized))
+        if (Attributes.AddTag(Id, tag))
         {
-            return;
+            Touch(nowUtc, updatedBy, "Tag added");
         }
-
-        _tags.Add(AssetTag.Create(Id, normalized));
-        Touch(nowUtc, updatedBy, "Tag added");
     }
 
     public void RemoveTag(string tag, DateTime nowUtc, Guid? updatedBy = null)
     {
         EnsureEditable();
-        var normalized = tag.Trim().ToLowerInvariant();
-        var existing = _tags.FirstOrDefault(t => t.Tag == normalized);
-        if (existing is null)
+        if (Attributes.RemoveTag(tag))
         {
-            return;
+            Touch(nowUtc, updatedBy, "Tag removed");
         }
-
-        _tags.Remove(existing);
-        Touch(nowUtc, updatedBy, "Tag removed");
     }
 
     public void AddFeature(Guid featureDefinitionId, DateTime nowUtc, Guid? updatedBy = null)
     {
         EnsureEditable();
-        if (_features.Any(f => f.FeatureDefinitionId == featureDefinitionId))
+        if (Attributes.AddFeature(Id, featureDefinitionId))
         {
-            return;
+            Touch(nowUtc, updatedBy, "Feature added");
         }
-
-        _features.Add(AssetFeature.Create(Id, featureDefinitionId));
-        Touch(nowUtc, updatedBy, "Feature added");
     }
 
     public void RemoveFeature(Guid featureDefinitionId, DateTime nowUtc, Guid? updatedBy = null)
     {
         EnsureEditable();
-        var existing = _features.FirstOrDefault(f => f.FeatureDefinitionId == featureDefinitionId);
-        if (existing is null)
+        if (Attributes.RemoveFeature(featureDefinitionId))
         {
-            return;
+            Touch(nowUtc, updatedBy, "Feature removed");
         }
-
-        _features.Remove(existing);
-        Touch(nowUtc, updatedBy, "Feature removed");
     }
 
     public void SubmitForApproval(DateTime nowUtc, Guid? updatedBy = null)
     {
-        EnsureEditable();
-        EnsureReadyForPublish();
-        ChangeStatus(AssetStatusCodes.PendingApproval, nowUtc, updatedBy, "Submitted for approval");
+        EnsureNotDeleted();
+        Lifecycle.SubmitForApproval(Id, nowUtc, updatedBy, EnsureReadyForPublish);
+        SetUpdatedAudit(nowUtc, updatedBy);
     }
 
     public void Approve(DateTime nowUtc, Guid? updatedBy = null)
     {
         EnsureNotDeleted();
-        if (StatusCode is not (AssetStatusCodes.PendingApproval or AssetStatusCodes.Rejected))
-        {
-            throw new ConflictException(ErrorResources.Get(ErrorCodes.AssetInvalidStatusTransition));
-        }
-
-        RejectionReason = null;
-        ChangeStatus(AssetStatusCodes.Published, nowUtc, updatedBy, "Approved and published");
-        PublishedAtUtc = nowUtc;
-        ArchivedAtUtc = null;
+        Lifecycle.Approve(Id, nowUtc, updatedBy);
+        SetUpdatedAudit(nowUtc, updatedBy);
     }
 
     public void Reject(string reason, DateTime nowUtc, Guid? updatedBy = null)
     {
         EnsureNotDeleted();
-        if (StatusCode != AssetStatusCodes.PendingApproval)
-        {
-            throw new ConflictException(ErrorResources.Get(ErrorCodes.AssetInvalidStatusTransition));
-        }
-
-        RejectionReason = AppGuard.NotEmpty(reason, nameof(reason)).Trim();
-        ChangeStatus(AssetStatusCodes.Rejected, nowUtc, updatedBy, "Rejected");
+        Lifecycle.Reject(Id, reason, nowUtc, updatedBy);
+        SetUpdatedAudit(nowUtc, updatedBy);
     }
 
     public void Publish(DateTime nowUtc, Guid? updatedBy = null)
     {
-        EnsureEditable();
-        EnsureReadyForPublish();
-        ChangeStatus(AssetStatusCodes.Published, nowUtc, updatedBy, "Published");
-        PublishedAtUtc = nowUtc;
-        ArchivedAtUtc = null;
-        RejectionReason = null;
+        EnsureNotDeleted();
+        Lifecycle.Publish(Id, nowUtc, updatedBy, EnsureReadyForPublish);
+        SetUpdatedAudit(nowUtc, updatedBy);
     }
 
     public void Archive(DateTime nowUtc, Guid? updatedBy = null)
     {
         EnsureNotDeleted();
-        if (StatusCode == AssetStatusCodes.Archived)
-        {
-            return;
-        }
-
-        ChangeStatus(AssetStatusCodes.Archived, nowUtc, updatedBy, "Archived");
-        ArchivedAtUtc = nowUtc;
-    }
-
-    private void EnsureReadyForPublish()
-    {
-        if (Pricing is null)
-        {
-            throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.AssetPricingRequired));
-        }
-
-        if (Location is null)
-        {
-            throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.AssetLocationRequired));
-        }
-
-        if (!_media.Any(m => m.Kind == AssetMediaKind.Image))
-        {
-            throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.AssetImageRequired));
-        }
+        Lifecycle.Archive(Id, nowUtc, updatedBy);
+        SetUpdatedAudit(nowUtc, updatedBy);
     }
 
     private void EnsureEditable()
     {
         EnsureNotDeleted();
-        EnsureNotArchived();
-        if (StatusCode == AssetStatusCodes.PendingApproval)
-        {
-            throw new ConflictException(ErrorResources.Get(ErrorCodes.AssetPendingApprovalLocked));
-        }
+        Lifecycle.EnsureEditable();
     }
 
-    private void EnsureNotArchived()
-    {
-        if (StatusCode == AssetStatusCodes.Archived)
-        {
-            throw new ConflictException(ErrorResources.Get(ErrorCodes.AssetArchived));
-        }
-    }
-
-    private void ChangeStatus(string statusCode, DateTime nowUtc, Guid? updatedBy, string summary)
-    {
-        StatusCode = statusCode;
-        Touch(nowUtc, updatedBy, summary);
-    }
+    private void EnsureReadyForPublish()
+        => Commercial.EnsureReadyForPublish(MediaCollection.HasImage);
 
     private void Touch(DateTime nowUtc, Guid? updatedBy, string summary)
     {
-        VersionNumber++;
+        Lifecycle.Touch(Id, nowUtc, updatedBy, summary);
         SetUpdatedAudit(nowUtc, updatedBy);
-        AddVersion(nowUtc, updatedBy, summary);
-    }
-
-    private void AddVersion(DateTime nowUtc, Guid? changedBy, string summary)
-    {
-        _versions.Add(AssetVersionEntry.Create(
-            Id,
-            VersionNumber,
-            StatusCode,
-            nowUtc,
-            changedBy,
-            summary));
     }
 
     private static Guid? NullIfEmpty(Guid? value)

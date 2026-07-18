@@ -27,6 +27,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\eHub.Application\eHub.Application.csproj" />
     <ProjectReference Include="..\..\src\eHub.Domain\eHub.Domain.csproj" />
+    <ProjectReference Include="..\..\src\eHub.Localization\eHub.Localization.csproj" />
     <ProjectReference Include="..\..\src\eHub.SharedKernel\eHub.SharedKernel.csproj" />
     <ProjectReference Include="..\..\src\eHub.Infrastructure\eHub.Infrastructure.csproj" />
   </ItemGroup>

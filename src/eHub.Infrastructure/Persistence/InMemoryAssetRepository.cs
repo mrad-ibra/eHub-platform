@@ -43,7 +43,7 @@ public sealed class InMemoryAssetRepository : IAssetRepository
     public Task<IReadOnlyList<Asset>> ListPublishedAsync(CancellationToken cancellationToken = default)
     {
         IReadOnlyList<Asset> items = _assets.Values
-            .Where(a => !a.IsDeleted && a.StatusCode == AssetStatusCodes.Published)
+            .Where(a => !a.IsDeleted && a.Status == AssetStatusCode.Published)
             .OrderByDescending(a => a.PublishedAtUtc)
             .ToArray();
 

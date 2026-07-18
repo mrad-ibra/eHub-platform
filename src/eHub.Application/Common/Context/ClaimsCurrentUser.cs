@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using eHub.Domain.Exceptions;
-using eHub.Domain.Resources;
+using eHub.Localization;
 
 namespace eHub.Application.Common.Context;
 

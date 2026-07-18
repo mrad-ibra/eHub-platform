@@ -1,4 +1,4 @@
-namespace eHub.Domain.Resources;
+namespace eHub.Localization;
 
 /// <summary>Resource keys for general/UI messages. Values live in Messages*.resx.</summary>
 public static class MessageCodes

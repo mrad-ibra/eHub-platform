@@ -5,7 +5,7 @@ using eHub.Application.Common.Time;
 using eHub.Application.Identity.Abstractions;
 using eHub.Application.Identity.Commands.Login;
 using eHub.Domain.Exceptions;
-using eHub.Domain.Resources;
+using eHub.Localization;
 
 namespace eHub.Application.Identity.Commands.ResetPassword;
 

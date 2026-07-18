@@ -1,12 +1,12 @@
 using System.Globalization;
 using System.Resources;
 
-namespace eHub.Domain.Resources;
+namespace eHub.Localization;
 
 public static class ErrorResources
 {
     private static readonly ResourceManager Manager = new(
-        "eHub.Domain.Resources.Errors",
+        "eHub.Localization.Resources.Errors",
         typeof(ErrorResources).Assembly);
 
     public static string Get(string key, params object[] args)

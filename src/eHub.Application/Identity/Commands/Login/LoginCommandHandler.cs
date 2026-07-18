@@ -4,7 +4,7 @@ using eHub.Application.Identity.Abstractions;
 using eHub.Application.Identity.Services;
 using eHub.Domain.Exceptions;
 using eHub.Domain.Identity;
-using eHub.Domain.Resources;
+using eHub.Localization;
 using Microsoft.Extensions.Options;
 
 namespace eHub.Application.Identity.Commands.Login;

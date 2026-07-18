@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\eHub.Localization\eHub.Localization.csproj" />
+  </ItemGroup>
+
 </Project>

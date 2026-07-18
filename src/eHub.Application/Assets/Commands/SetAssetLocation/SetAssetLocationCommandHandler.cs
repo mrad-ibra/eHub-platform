@@ -5,7 +5,7 @@ using eHub.Application.Common.Persistence;
 using eHub.Application.Common.Time;
 using eHub.Domain.Assets;
 using eHub.Domain.Exceptions;
-using eHub.Domain.Resources;
+using eHub.Localization;
 using FluentValidation;
 
 namespace eHub.Application.Assets.Commands.SetAssetLocation;

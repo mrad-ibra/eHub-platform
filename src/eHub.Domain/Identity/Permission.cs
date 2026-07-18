@@ -1,6 +1,6 @@
 using eHub.Domain.Common;
 using eHub.Domain.Exceptions;
-using eHub.Domain.Resources;
+using eHub.Localization;
 
 namespace eHub.Domain.Identity;
 

@@ -2,6 +2,9 @@ using eHub.Domain.Common;
 
 namespace eHub.Domain.Assets;
 
+/// <summary>
+/// Location value object. Catalog place references are Id-only (no Country/City navigation).
+/// </summary>
 public sealed class AssetLocation
 {
     public Guid CountryId { get; private set; }

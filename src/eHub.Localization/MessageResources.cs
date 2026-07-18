@@ -1,12 +1,12 @@
 using System.Globalization;
 using System.Resources;
 
-namespace eHub.Domain.Resources;
+namespace eHub.Localization;
 
 public static class MessageResources
 {
     private static readonly ResourceManager Manager = new(
-        "eHub.Domain.Resources.Messages",
+        "eHub.Localization.Resources.Messages",
         typeof(MessageResources).Assembly);
 
     public static string Get(string key, params object[] args)

@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\eHub.Domain\eHub.Domain.csproj" />
+    <ProjectReference Include="..\eHub.Localization\eHub.Localization.csproj" />
   </ItemGroup>
 
   <ItemGroup>

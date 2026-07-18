@@ -1,6 +1,7 @@
 using eHub.Application.Catalog.Abstractions;
 using eHub.Application.Common.Time;
 using eHub.Application.Configuration;
+using eHub.Domain.Assets;
 using eHub.Domain.Catalog;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -139,12 +140,12 @@ public sealed class CatalogSeedHostedService(
             BookingStatus.Create("COMPLETED", "Completed", now, 4));
 
         await SeedAsync(assetStatuses.AddAsync, cancellationToken,
-            AssetStatus.Create("DRAFT", "Draft", now, 1),
-            AssetStatus.Create("PENDING_APPROVAL", "Pending Approval", now, 2),
-            AssetStatus.Create("PUBLISHED", "Published", now, 3),
-            AssetStatus.Create("REJECTED", "Rejected", now, 4),
-            AssetStatus.Create("SUSPENDED", "Suspended", now, 5),
-            AssetStatus.Create("ARCHIVED", "Archived", now, 6));
+            AssetStatus.Create(AssetStatusCode.Draft, "Draft", now, 1),
+            AssetStatus.Create(AssetStatusCode.PendingApproval, "Pending Approval", now, 2),
+            AssetStatus.Create(AssetStatusCode.Published, "Published", now, 3),
+            AssetStatus.Create(AssetStatusCode.Rejected, "Rejected", now, 4),
+            AssetStatus.Create(AssetStatusCode.Suspended, "Suspended", now, 5),
+            AssetStatus.Create(AssetStatusCode.Archived, "Archived", now, 6));
 
         await SeedAsync(reviewStatuses.AddAsync, cancellationToken,
             ReviewStatus.Create("PENDING", "Pending", now, 1),

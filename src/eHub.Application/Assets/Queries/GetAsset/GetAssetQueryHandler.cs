@@ -2,7 +2,7 @@ using eHub.Application.Assets.Abstractions;
 using eHub.Application.Common.Messaging;
 using eHub.Domain.Assets;
 using eHub.Domain.Exceptions;
-using eHub.Domain.Resources;
+using eHub.Localization;
 
 namespace eHub.Application.Assets.Queries.GetAsset;
 
@@ -27,7 +27,7 @@ public sealed class GetAssetQueryHandler(IAssetRepository assets)
             asset.ModelId,
             asset.Title,
             asset.Description,
-            asset.StatusCode,
+            asset.Status.Value,
             asset.RejectionReason,
             asset.VersionNumber,
             asset.CreatedAtUtc,
@@ -82,7 +82,7 @@ public sealed class GetAssetQueryHandler(IAssetRepository assets)
                 .OrderByDescending(v => v.VersionNumber)
                 .Select(v => new AssetVersionDto(
                     v.VersionNumber,
-                    v.StatusCode,
+                    v.Status.Value,
                     v.ChangeSummary,
                     v.ChangedBy,
                     v.ChangedAtUtc))

@@ -1,4 +1,4 @@
-using eHub.Domain.Resources;
+using eHub.Localization;
 using FluentValidation;
 
 namespace eHub.Application.Identity.Commands.ForgotPassword;

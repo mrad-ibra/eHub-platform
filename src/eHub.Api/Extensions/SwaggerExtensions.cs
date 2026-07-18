@@ -1,6 +1,6 @@
 using Asp.Versioning.ApiExplorer;
 using eHub.Api.Swagger;
-using eHub.Domain.Resources;
+using eHub.Localization;
 using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.SwaggerGen;
 

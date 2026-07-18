@@ -1,5 +1,5 @@
 using Asp.Versioning.ApiExplorer;
-using eHub.Domain.Resources;
+using eHub.Localization;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;

@@ -1,4 +1,4 @@
-namespace eHub.Domain.Resources;
+namespace eHub.Localization;
 
 /// <summary>Resource keys for error messages. Values live in Errors*.resx.</summary>
 public static class ErrorCodes
@@ -10,7 +10,6 @@ public static class ErrorCodes
     public const string SystemRoleRenameForbidden = nameof(SystemRoleRenameForbidden);
     public const string SystemPermissionRenameForbidden = nameof(SystemPermissionRenameForbidden);
     public const string RoleUnknownPermission = nameof(RoleUnknownPermission);
-    public const string WeatherDaysOutOfRange = nameof(WeatherDaysOutOfRange);
     public const string ValidationFailed = nameof(ValidationFailed);
     public const string Unauthorized = nameof(Unauthorized);
     public const string InternalError = nameof(InternalError);
@@ -48,4 +47,5 @@ public static class ErrorCodes
     public const string AssetPendingApprovalLocked = nameof(AssetPendingApprovalLocked);
     public const string AssetArchived = nameof(AssetArchived);
     public const string AssetAccessDenied = nameof(AssetAccessDenied);
+    public const string AssetStatusCodeInvalid = nameof(AssetStatusCodeInvalid);
 }

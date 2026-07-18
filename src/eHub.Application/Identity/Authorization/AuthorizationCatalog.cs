@@ -1,5 +1,5 @@
 using eHub.Domain.Identity;
-using eHub.Domain.Resources;
+using eHub.Localization;
 using Microsoft.Extensions.Options;
 
 namespace eHub.Application.Identity.Authorization;

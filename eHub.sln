@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eHub.UnitTests", "tests\eHu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eHub.IntegrationTests", "tests\eHub.IntegrationTests\eHub.IntegrationTests.csproj", "{29C31F12-3CC8-4084-BF14-7B16F2308425}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eHub.Localization", "src\eHub.Localization\eHub.Localization.csproj", "{22086495-DFBC-4BFA-9441-DABB7ECF5E90}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -141,6 +143,18 @@ Global
 		{29C31F12-3CC8-4084-BF14-7B16F2308425}.Release|x64.Build.0 = Release|Any CPU
 		{29C31F12-3CC8-4084-BF14-7B16F2308425}.Release|x86.ActiveCfg = Release|Any CPU
 		{29C31F12-3CC8-4084-BF14-7B16F2308425}.Release|x86.Build.0 = Release|Any CPU
+		{22086495-DFBC-4BFA-9441-DABB7ECF5E90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22086495-DFBC-4BFA-9441-DABB7ECF5E90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22086495-DFBC-4BFA-9441-DABB7ECF5E90}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{22086495-DFBC-4BFA-9441-DABB7ECF5E90}.Debug|x64.Build.0 = Debug|Any CPU
+		{22086495-DFBC-4BFA-9441-DABB7ECF5E90}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{22086495-DFBC-4BFA-9441-DABB7ECF5E90}.Debug|x86.Build.0 = Debug|Any CPU
+		{22086495-DFBC-4BFA-9441-DABB7ECF5E90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22086495-DFBC-4BFA-9441-DABB7ECF5E90}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22086495-DFBC-4BFA-9441-DABB7ECF5E90}.Release|x64.ActiveCfg = Release|Any CPU
+		{22086495-DFBC-4BFA-9441-DABB7ECF5E90}.Release|x64.Build.0 = Release|Any CPU
+		{22086495-DFBC-4BFA-9441-DABB7ECF5E90}.Release|x86.ActiveCfg = Release|Any CPU
+		{22086495-DFBC-4BFA-9441-DABB7ECF5E90}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -155,5 +169,6 @@ Global
 		{8108CDDE-353F-4A8F-A56C-CBF98C456597} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{BC3923EE-FC0F-4795-BFFC-2428BF305B1B} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{29C31F12-3CC8-4084-BF14-7B16F2308425} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{22086495-DFBC-4BFA-9441-DABB7ECF5E90} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

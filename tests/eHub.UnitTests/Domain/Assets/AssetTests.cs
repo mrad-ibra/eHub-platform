@@ -18,7 +18,7 @@ public sealed class AssetTests
     {
         var asset = Asset.Create(OwnerId, CategoryId, "Toyota Corolla", Now);
 
-        asset.StatusCode.Should().Be(AssetStatusCodes.Draft);
+        asset.Status.Should().Be(AssetStatusCode.Draft);
         asset.Title.Should().Be("Toyota Corolla");
         asset.VersionNumber.Should().Be(1);
         asset.VersionHistory.Should().ContainSingle();
@@ -41,7 +41,7 @@ public sealed class AssetTests
 
         asset.Publish(Now.AddMinutes(10));
 
-        asset.StatusCode.Should().Be(AssetStatusCodes.Published);
+        asset.Status.Should().Be(AssetStatusCode.Published);
         asset.PublishedAtUtc.Should().Be(Now.AddMinutes(10));
     }
 
@@ -50,10 +50,10 @@ public sealed class AssetTests
     {
         var asset = ReadyAsset();
         asset.SubmitForApproval(Now.AddMinutes(1));
-        asset.StatusCode.Should().Be(AssetStatusCodes.PendingApproval);
+        asset.Status.Should().Be(AssetStatusCode.PendingApproval);
 
         asset.Approve(Now.AddMinutes(2));
-        asset.StatusCode.Should().Be(AssetStatusCodes.Published);
+        asset.Status.Should().Be(AssetStatusCode.Published);
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public sealed class AssetTests
         asset.SubmitForApproval(Now.AddMinutes(1));
         asset.Reject("Incomplete docs", Now.AddMinutes(2));
 
-        asset.StatusCode.Should().Be(AssetStatusCodes.Rejected);
+        asset.Status.Should().Be(AssetStatusCode.Rejected);
         asset.RejectionReason.Should().Be("Incomplete docs");
     }
 
@@ -104,7 +104,7 @@ public sealed class AssetTests
         var act = () => asset.Publish(Now.AddMinutes(3));
 
         act.Should().Throw<ConflictException>();
-        asset.StatusCode.Should().Be(AssetStatusCodes.Archived);
+        asset.Status.Should().Be(AssetStatusCode.Archived);
     }
 
     private static Asset ReadyAsset()

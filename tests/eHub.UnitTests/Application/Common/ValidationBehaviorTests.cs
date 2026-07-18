@@ -1,5 +1,5 @@
 using eHub.Application.Common.Behaviors;
-using eHub.Application.Weather.Queries.GetWeatherForecast;
+using eHub.Application.Identity.Commands.Login;
 using FluentValidation;
 using MediatR;
 
@@ -10,46 +10,50 @@ public sealed class ValidationBehaviorTests
     [Fact]
     public async Task Handle_WhenValid_CallsNext()
     {
-        var behavior = new ValidationBehavior<GetWeatherForecastQuery, GetWeatherForecastResult>(
-            [new GetWeatherForecastQueryValidator()]);
+        var behavior = new ValidationBehavior<LoginCommand, AuthSessionResult>(
+            [new LoginCommandValidator()]);
 
         var nextCalled = false;
-        RequestHandlerDelegate<GetWeatherForecastResult> next = _ =>
+        var expected = CreateSessionResult();
+        RequestHandlerDelegate<AuthSessionResult> next = _ =>
         {
             nextCalled = true;
-            return Task.FromResult(new GetWeatherForecastResult
-            {
-                GeneratedAtUtc = DateTime.UtcNow,
-                Count = 1,
-                Items = []
-            });
+            return Task.FromResult(expected);
         };
 
         var result = await behavior.Handle(
-            new GetWeatherForecastQuery { Days = 5 },
+            new LoginCommand { Email = "user@ehub.local", Password = "secret1" },
             next,
             CancellationToken.None);
 
         nextCalled.Should().BeTrue();
-        result.Count.Should().Be(1);
+        result.Should().BeSameAs(expected);
     }
 
     [Fact]
     public async Task Handle_WhenInvalid_ThrowsValidationException()
     {
-        var behavior = new ValidationBehavior<GetWeatherForecastQuery, GetWeatherForecastResult>(
-            [new GetWeatherForecastQueryValidator()]);
+        var behavior = new ValidationBehavior<LoginCommand, AuthSessionResult>(
+            [new LoginCommandValidator()]);
 
         var act = () => behavior.Handle(
-            new GetWeatherForecastQuery { Days = 99 },
-            _ => Task.FromResult(new GetWeatherForecastResult
-            {
-                GeneratedAtUtc = DateTime.UtcNow,
-                Count = 0,
-                Items = []
-            }),
+            new LoginCommand { Email = "not-an-email", Password = "x" },
+            _ => Task.FromResult(CreateSessionResult()),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<ValidationException>();
     }
+
+    private static AuthSessionResult CreateSessionResult()
+        => new(
+            Guid.NewGuid(),
+            "user@ehub.local",
+            "User",
+            "Personal",
+            ["Customer"],
+            "access",
+            DateTime.UtcNow.AddHours(1),
+            Guid.NewGuid(),
+            "refresh",
+            DateTime.UtcNow.AddDays(7));
 }

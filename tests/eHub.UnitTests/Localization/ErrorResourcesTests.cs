@@ -1,7 +1,7 @@
 using System.Globalization;
-using eHub.Domain.Resources;
+using eHub.Localization;
 
-namespace eHub.UnitTests.Domain.Resources;
+namespace eHub.UnitTests.Localization;
 
 public sealed class ErrorResourcesTests
 {

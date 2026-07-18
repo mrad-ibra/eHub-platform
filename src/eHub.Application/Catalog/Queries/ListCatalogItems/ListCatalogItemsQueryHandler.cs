@@ -2,7 +2,7 @@ using eHub.Application.Catalog.Abstractions;
 using eHub.Application.Common.Messaging;
 using eHub.Domain.Catalog;
 using eHub.Domain.Exceptions;
-using eHub.Domain.Resources;
+using eHub.Localization;
 
 namespace eHub.Application.Catalog.Queries.ListCatalogItems;
 

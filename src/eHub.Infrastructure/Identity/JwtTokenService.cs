@@ -5,7 +5,7 @@ using eHub.Application.Common.Time;
 using eHub.Application.Configuration;
 using eHub.Application.Identity.Abstractions;
 using eHub.Domain.Exceptions;
-using eHub.Domain.Resources;
+using eHub.Localization;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 

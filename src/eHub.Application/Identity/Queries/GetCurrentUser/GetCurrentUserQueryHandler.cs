@@ -2,7 +2,7 @@ using eHub.Application.Common.Context;
 using eHub.Application.Common.Messaging;
 using eHub.Application.Identity.Abstractions;
 using eHub.Domain.Exceptions;
-using eHub.Domain.Resources;
+using eHub.Localization;
 
 namespace eHub.Application.Identity.Queries.GetCurrentUser;
 
