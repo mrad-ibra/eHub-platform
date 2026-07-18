@@ -24,6 +24,7 @@ public sealed class AuthSessionFactory(
     {
         var now = clock.UtcNow;
         var roles = ResolveRoleNames(user, authOptions.Value.AccountKindRoles);
+        var permissions = ResolvePermissions(roles);
 
         var refreshOptions = authOptions.Value.RefreshToken;
         var rawRefreshToken = refreshTokenHasher.GenerateRawToken(refreshOptions.TokenSizeBytes);
@@ -41,6 +42,7 @@ public sealed class AuthSessionFactory(
             user.Email,
             user.AccountKind.ToString(),
             roles,
+            permissions,
             refreshToken.Id);
 
         await refreshTokens.AddAsync(refreshToken, cancellationToken);
@@ -70,5 +72,25 @@ public sealed class AuthSessionFactory(
 
         var role = authorizationCatalog.FindRole(preferred);
         return role is null ? [preferred] : [role.Name];
+    }
+
+    private IReadOnlyList<string> ResolvePermissions(IReadOnlyList<string> roleNames)
+    {
+        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in roleNames)
+        {
+            var role = authorizationCatalog.FindRole(name);
+            if (role?.Permissions is null)
+            {
+                continue;
+            }
+
+            foreach (var permission in role.Permissions)
+            {
+                set.Add(permission);
+            }
+        }
+
+        return set.ToArray();
     }
 }

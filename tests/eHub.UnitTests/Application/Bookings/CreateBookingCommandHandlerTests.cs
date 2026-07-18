@@ -41,9 +41,23 @@ public sealed class CreateBookingCommandHandlerTests
         _currentUser.RequireUserId().Returns(RenterId);
         _clock.UtcNow.Returns(Now);
         _numbers.NextAsync(Arg.Any<CancellationToken>()).Returns("BK-2026-000000042");
-        _idempotency.FindBookingIdAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns((Guid?)null);
-        _bookings.ListBlockingByAssetAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        _idempotency.BeginAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<DateTime>(),
+                Arg.Any<TimeSpan>(),
+                Arg.Any<CancellationToken>())
+            .Returns(ci => new IdempotencyBeginResult.Began(
+                new BookingIdempotencyRecord(
+                    ci.ArgAt<Guid>(0),
+                    ci.ArgAt<string>(1),
+                    ci.ArgAt<string>(2),
+                    BookingIdempotencyStatus.Started,
+                    null,
+                    Now,
+                    Now.AddHours(12))));
+        _bookings.ListBlockingByAssetAsync(Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(Array.Empty<Booking>());
 
         _handler = new CreateBookingCommandHandler(
@@ -78,8 +92,9 @@ public sealed class CreateBookingCommandHandlerTests
         result.BufferDays.Should().Be(1);
         result.ExpiresAtUtc.Should().Be(Now.AddHours(12));
         result.SnapshotName.Should().Be("Toyota Corolla");
-        await _bookings.Received(1).AddAsync(Arg.Any<Booking>(), Arg.Any<CancellationToken>());
-        await _idempotency.Received(1).SaveAsync(RenterId, "key-1", result.Id, Arg.Any<CancellationToken>());
+        result.AggregateVersion.Should().Be(1);
+        await _bookings.Received(1).AddAsync(Arg.Any<Booking>(), Now, Arg.Any<CancellationToken>());
+        await _idempotency.Received(1).CompleteAsync(RenterId, "key-1", result.Id, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -97,8 +112,14 @@ public sealed class CreateBookingCommandHandlerTests
             BookingTerms.Create(1),
             Now);
 
-        _idempotency.FindBookingIdAsync(RenterId, "key-1", Arg.Any<CancellationToken>())
-            .Returns(existing.Id);
+        _idempotency.BeginAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<DateTime>(),
+                Arg.Any<TimeSpan>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new IdempotencyBeginResult.CompletedReplay(existing.Id));
         _bookings.GetByIdAsync(existing.Id, Arg.Any<CancellationToken>()).Returns(existing);
 
         var result = await _handler.Handle(
@@ -106,7 +127,29 @@ public sealed class CreateBookingCommandHandlerTests
             CancellationToken.None);
 
         result.Id.Should().Be(existing.Id);
-        await _bookings.DidNotReceive().AddAsync(Arg.Any<Booking>(), Arg.Any<CancellationToken>());
+        await _bookings.DidNotReceive().AddAsync(
+            Arg.Any<Booking>(),
+            Arg.Any<DateTime>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_IdempotencyPayloadMismatch_Throws()
+    {
+        _idempotency.BeginAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<DateTime>(),
+                Arg.Any<TimeSpan>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new IdempotencyBeginResult.PayloadMismatch());
+
+        var act = () => _handler.Handle(
+            new CreateBookingCommand(Guid.NewGuid(), new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 3), "key-1"),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<ConflictException>();
     }
 
     [Fact]
@@ -126,7 +169,7 @@ public sealed class CreateBookingCommandHandlerTests
             BookingTerms.Create(1),
             Now);
 
-        _bookings.ListBlockingByAssetAsync(asset.Id, Arg.Any<CancellationToken>())
+        _bookings.ListBlockingByAssetAsync(asset.Id, Now, Arg.Any<CancellationToken>())
             .Returns(new[] { hold });
 
         var act = () => _handler.Handle(
@@ -134,6 +177,7 @@ public sealed class CreateBookingCommandHandlerTests
             CancellationToken.None);
 
         await act.Should().ThrowAsync<ConflictException>();
+        await _idempotency.Received(1).AbandonAsync(RenterId, "key-2", Arg.Any<CancellationToken>());
     }
 
     private Asset PublishedAsset()

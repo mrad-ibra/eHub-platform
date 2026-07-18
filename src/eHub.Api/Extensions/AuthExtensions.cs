@@ -1,5 +1,6 @@
 using System.Text;
 using eHub.Application.Configuration;
+using eHub.Application.Identity.Authorization;
 using eHub.Domain.Exceptions;
 using eHub.Localization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -18,6 +19,11 @@ public static class AuthExtensions
         if (string.IsNullOrWhiteSpace(auth.Jwt.Key) || auth.Jwt.Key.Length < 32)
         {
             throw new ConfigurationException(ErrorResources.Get(ErrorCodes.JwtConfigMissing));
+        }
+
+        if (auth.Jwt.Key.StartsWith("CHANGE_ME", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ConfigurationException(ErrorResources.Get(ErrorCodes.JwtSecretPlaceholder));
         }
 
         services.AddHttpContextAccessor();
@@ -41,7 +47,18 @@ public static class AuthExtensions
                 };
             });
 
-        services.AddAuthorization();
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy(
+                AuthPolicies.BookingsCreate,
+                policy => policy.RequireClaim(AuthPolicies.PermissionClaimType, AuthPolicies.BookingsCreate));
+            options.AddPolicy(
+                AuthPolicies.BookingsRead,
+                policy => policy.RequireClaim(AuthPolicies.PermissionClaimType, AuthPolicies.BookingsRead));
+            options.AddPolicy(
+                AuthPolicies.BookingsManage,
+                policy => policy.RequireClaim(AuthPolicies.PermissionClaimType, AuthPolicies.BookingsManage));
+        });
 
         services.ConfigureSwaggerGen(options =>
         {

@@ -192,4 +192,28 @@
   <data name="BookingIdempotencyKeyRequired" xml:space="preserve">
     <value>Idempotency-Key header is required.</value>
   </data>
+  <data name="BookingStartDateInPast" xml:space="preserve">
+    <value>Booking start date cannot be in the past.</value>
+  </data>
+  <data name="BookingHoldExpired" xml:space="preserve">
+    <value>This booking hold has expired.</value>
+  </data>
+  <data name="BookingIdempotencyPayloadMismatch" xml:space="preserve">
+    <value>Idempotency-Key was reused with a different request payload.</value>
+  </data>
+  <data name="BookingDriverNotSupported" xml:space="preserve">
+    <value>This asset does not support driver requests.</value>
+  </data>
+  <data name="BookingDeliveryNotSupported" xml:space="preserve">
+    <value>This asset does not support delivery requests.</value>
+  </data>
+  <data name="BookingPickupAddressRequired" xml:space="preserve">
+    <value>Pickup address is required when not using the asset location.</value>
+  </data>
+  <data name="BookingDropoffAddressRequired" xml:space="preserve">
+    <value>Dropoff address is required when not using the asset location.</value>
+  </data>
+  <data name="JwtSecretPlaceholder" xml:space="preserve">
+    <value>JWT signing key is a placeholder and must be replaced before running.</value>
+  </data>
 </root>

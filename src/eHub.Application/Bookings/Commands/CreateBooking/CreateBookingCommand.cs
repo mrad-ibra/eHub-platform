@@ -1,5 +1,4 @@
 using eHub.Application.Common.Messaging;
-using eHub.Domain.Bookings;
 
 namespace eHub.Application.Bookings.Commands.CreateBooking;
 
@@ -27,5 +26,5 @@ public sealed record CreateBookingResult(
     decimal TotalAmount,
     Guid CurrencyId,
     DateTime? ExpiresAtUtc,
-    int Version,
+    int AggregateVersion,
     string SnapshotName);

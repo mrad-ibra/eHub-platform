@@ -6,7 +6,7 @@ using eHub.Localization;
 namespace eHub.Application.Bookings.Services;
 
 /// <summary>
-/// Application-facing availability orchestration; conflict math lives in <see cref="BookingAvailability"/>.
+/// Orchestrates asset + booking reads; conflict predicates live in <see cref="BookingAvailability"/>.
 /// </summary>
 public sealed class BookingAvailabilityService
 {
@@ -14,16 +14,19 @@ public sealed class BookingAvailabilityService
         Asset asset,
         BookingPeriod requested,
         int bufferDays,
-        IReadOnlyList<Booking> blockingBookings)
+        IReadOnlyList<Booking> blockingBookings,
+        DateTime nowUtc)
     {
         if (asset.Status != AssetStatusCode.Published || asset.IsDeleted)
         {
             throw new ConflictException(ErrorResources.Get(ErrorCodes.BookingAssetNotBookable));
         }
 
+        BookingAvailability.EnsureStartNotInPast(requested, nowUtc);
+
         foreach (var block in asset.AvailabilityBlocks)
         {
-            if (BookingAvailability.ConflictsWithAssetBlock(requested, block))
+            if (BookingAvailability.ConflictsWithAssetBlock(requested, bufferDays, block))
             {
                 throw new ConflictException(ErrorResources.Get(ErrorCodes.BookingConflict));
             }
@@ -31,7 +34,7 @@ public sealed class BookingAvailabilityService
 
         foreach (var existing in blockingBookings)
         {
-            if (!existing.Status.IsBlocking)
+            if (!existing.BlocksCalendar(nowUtc))
             {
                 continue;
             }

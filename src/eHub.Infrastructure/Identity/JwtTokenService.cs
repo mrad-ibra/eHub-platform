@@ -4,6 +4,7 @@ using System.Text;
 using eHub.Application.Common.Time;
 using eHub.Application.Configuration;
 using eHub.Application.Identity.Abstractions;
+using eHub.Application.Identity.Authorization;
 using eHub.Domain.Exceptions;
 using eHub.Localization;
 using Microsoft.Extensions.Options;
@@ -22,6 +23,7 @@ public sealed class JwtTokenService(IOptions<AuthOptions> options, IClock clock)
         string email,
         string accountKind,
         IEnumerable<string> roles,
+        IEnumerable<string>? permissions = null,
         Guid? sessionId = null)
     {
         EnsureConfigured();
@@ -49,6 +51,14 @@ public sealed class JwtTokenService(IOptions<AuthOptions> options, IClock clock)
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
 
+        if (permissions is not null)
+        {
+            foreach (var permission in permissions.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                claims.Add(new Claim(AuthPolicies.PermissionClaimType, permission));
+            }
+        }
+
         var credentials = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Key)),
             SecurityAlgorithms.HmacSha256);
@@ -69,6 +79,11 @@ public sealed class JwtTokenService(IOptions<AuthOptions> options, IClock clock)
         if (string.IsNullOrWhiteSpace(_jwt.Key) || _jwt.Key.Length < 32)
         {
             throw new ConfigurationException(ErrorResources.Get(ErrorCodes.JwtConfigMissing));
+        }
+
+        if (_jwt.Key.StartsWith("CHANGE_ME", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ConfigurationException(ErrorResources.Get(ErrorCodes.JwtSecretPlaceholder));
         }
     }
 }

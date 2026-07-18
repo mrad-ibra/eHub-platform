@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using eHub.Application.Bookings.Abstractions;
 using eHub.Domain.Bookings;
+using eHub.Domain.Exceptions;
+using eHub.Localization;
 
 namespace eHub.Infrastructure.Persistence;
 
@@ -12,12 +14,15 @@ public sealed class InMemoryBookingRepository : IBookingRepository
     private readonly ConcurrentDictionary<Guid, object> _assetLocks = new();
 
     public Task AddAsync(Booking booking, CancellationToken cancellationToken = default)
+        => AddAsync(booking, DateTime.UtcNow, cancellationToken);
+
+    public Task AddAsync(Booking booking, DateTime nowUtc, CancellationToken cancellationToken = default)
     {
         var gate = _assetLocks.GetOrAdd(booking.AssetId, _ => new object());
         lock (gate)
         {
             foreach (var existing in _bookings.Values.Where(b =>
-                         b.AssetId == booking.AssetId && b.Status.IsBlocking))
+                         b.AssetId == booking.AssetId && b.BlocksCalendar(nowUtc)))
             {
                 if (BookingAvailability.ConflictsWithBlockingBooking(
                         booking.Period,
@@ -25,8 +30,7 @@ public sealed class InMemoryBookingRepository : IBookingRepository
                         existing.Period,
                         existing.BufferDays))
                 {
-                    throw new Domain.Exceptions.ConflictException(
-                        Localization.ErrorResources.Get(Localization.ErrorCodes.BookingConflict));
+                    throw new ConflictException(ErrorResources.Get(ErrorCodes.BookingConflict));
                 }
             }
 
@@ -64,9 +68,15 @@ public sealed class InMemoryBookingRepository : IBookingRepository
     public Task<IReadOnlyList<Booking>> ListBlockingByAssetAsync(
         Guid assetId,
         CancellationToken cancellationToken = default)
+        => ListBlockingByAssetAsync(assetId, DateTime.UtcNow, cancellationToken);
+
+    public Task<IReadOnlyList<Booking>> ListBlockingByAssetAsync(
+        Guid assetId,
+        DateTime nowUtc,
+        CancellationToken cancellationToken = default)
     {
         IReadOnlyList<Booking> items = _bookings.Values
-            .Where(b => b.AssetId == assetId && b.Status.IsBlocking)
+            .Where(b => b.AssetId == assetId && b.BlocksCalendar(nowUtc))
             .OrderBy(b => b.Period.StartDate)
             .ToArray();
 

@@ -1,8 +1,8 @@
 # EPIC 5 — Booking Engine
 
 **Sprint 5.0:** CLOSED — Architecture **APPROVED** (2026-07-19)  
-**Sprint 5.1:** **APPROVED WITH COMMENTS** (2026-07-19) — overall **9.9/10**. Merge-ready.  
-**Review notes:** [12-sprint-51-review.md](12-sprint-51-review.md)
+**Sprint 5.1:** **CHANGES REQUIRED** → P0 remediation applied (see [12-sprint-51-review.md](12-sprint-51-review.md)). Re-review pending.  
+Domain model remains strong; production readiness still gated on EF + expire worker + deeper integration tests.
 
 ### Architect review focus (going forward)
 

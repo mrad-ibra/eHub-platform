@@ -192,4 +192,28 @@
   <data name="BookingIdempotencyKeyRequired" xml:space="preserve">
     <value>Idempotency-Key başlığı tələb olunur.</value>
   </data>
+  <data name="BookingStartDateInPast" xml:space="preserve">
+    <value>Bronun başlama tarixi keçmişdə ola bilməz.</value>
+  </data>
+  <data name="BookingHoldExpired" xml:space="preserve">
+    <value>Bu bron hold-unun vaxtı bitib.</value>
+  </data>
+  <data name="BookingIdempotencyPayloadMismatch" xml:space="preserve">
+    <value>Idempotency-Key fərqli sorğu gövdəsi ilə təkrar istifadə olunub.</value>
+  </data>
+  <data name="BookingDriverNotSupported" xml:space="preserve">
+    <value>Bu aktiv sürücü sorğusunu dəstəkləmir.</value>
+  </data>
+  <data name="BookingDeliveryNotSupported" xml:space="preserve">
+    <value>Bu aktiv çatdırılma sorğusunu dəstəkləmir.</value>
+  </data>
+  <data name="BookingPickupAddressRequired" xml:space="preserve">
+    <value>Aktiv ünvanı istifadə olunmadıqda götürmə ünvanı tələb olunur.</value>
+  </data>
+  <data name="BookingDropoffAddressRequired" xml:space="preserve">
+    <value>Aktiv ünvanı istifadə olunmadıqda təslim ünvanı tələb olunur.</value>
+  </data>
+  <data name="JwtSecretPlaceholder" xml:space="preserve">
+    <value>JWT imza açarı placeholder-dır və işə salınmazdan əvvəl dəyişdirilməlidir.</value>
+  </data>
 </root>

@@ -37,12 +37,37 @@ public sealed class Booking : AggregateRoot
     public DateTime? StartedAtUtc { get; private set; }
     public DateTime? CompletedAtUtc { get; private set; }
     public Guid? PaymentId { get; private set; }
-    public int Version { get; private set; }
+
+    /// <summary>
+    /// Aggregate mutation counter (future optimistic concurrency token — not snapshot schema version).
+    /// </summary>
+    public int AggregateVersion { get; private set; }
 
     public IReadOnlyCollection<BookingTimelineEntry> Timeline => _timeline.AsReadOnly();
     public IReadOnlyCollection<BookingStatusHistoryEntry> StatusHistory => _statusHistory.AsReadOnly();
 
     public DateOnly OccupiedEnd => Period.OccupiedEnd(BufferDays);
+
+    /// <summary>
+    /// True when this booking still occupies the calendar at <paramref name="nowUtc"/>
+    /// (pending holds past ExpiresAtUtc do not block).
+    /// </summary>
+    public bool BlocksCalendar(DateTime nowUtc)
+    {
+        if (!Status.IsBlocking)
+        {
+            return false;
+        }
+
+        if (Status.IsOneOf(
+                BookingStatusCode.PendingOwnerApproval,
+                BookingStatusCode.PendingPayment))
+        {
+            return ExpiresAtUtc is null || nowUtc < ExpiresAtUtc;
+        }
+
+        return true;
+    }
 
     private Booking()
     {
@@ -78,6 +103,7 @@ public sealed class Booking : AggregateRoot
             throw new ForbiddenAccessException(ErrorResources.Get(ErrorCodes.BookingOwnAsset));
         }
 
+        BookingAvailability.EnsureStartNotInPast(period, nowUtc);
         BookingAvailability.EnsureRentalDaysAllowed(period, terms);
 
         var driverOpt = driver ?? DriverOption.None();
@@ -102,7 +128,7 @@ public sealed class Booking : AggregateRoot
             Driver = driverOpt,
             Delivery = deliveryOpt,
             Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
-            Version = 1
+            AggregateVersion = 1
         };
 
         booking.SetCreatedAudit(nowUtc, renterId);
@@ -146,6 +172,7 @@ public sealed class Booking : AggregateRoot
     {
         EnsureHost(hostId);
         EnsureStatus(BookingStatusCode.PendingOwnerApproval);
+        EnsureHoldActive(nowUtc);
 
         TransitionTo(
             BookingStatusCode.PendingPayment,
@@ -154,7 +181,7 @@ public sealed class Booking : AggregateRoot
             "Approved",
             "Owner approved — payment window started.");
         ExpiresAtUtc = nowUtc.Add(BookingDefaults.PaymentTtl);
-        Version++;
+        AggregateVersion++;
 
         Raise(new BookingApproved(Id, BookingNumber, nowUtc));
     }
@@ -176,7 +203,7 @@ public sealed class Booking : AggregateRoot
             "Rejected",
             $"Owner rejected: {RejectionReason}");
         ExpiresAtUtc = null;
-        Version++;
+        AggregateVersion++;
 
         Raise(new BookingRejected(Id, BookingNumber, RejectionReason, nowUtc));
     }
@@ -200,7 +227,7 @@ public sealed class Booking : AggregateRoot
             "Expired",
             "Booking expired — hold released.");
         ExpiresAtUtc = null;
-        Version++;
+        AggregateVersion++;
 
         Raise(new BookingExpired(Id, BookingNumber, nowUtc));
     }
@@ -208,6 +235,7 @@ public sealed class Booking : AggregateRoot
     public void Confirm(Guid paymentId, DateTime nowUtc)
     {
         EnsureStatus(BookingStatusCode.PendingPayment);
+        EnsureHoldActive(nowUtc);
         PaymentId = AppGuard.NotEmpty(paymentId, nameof(paymentId));
         ConfirmedAtUtc = nowUtc;
         ExpiresAtUtc = null;
@@ -218,7 +246,7 @@ public sealed class Booking : AggregateRoot
             null,
             "Paid",
             "Payment succeeded — booking confirmed.");
-        Version++;
+        AggregateVersion++;
 
         Raise(new BookingConfirmed(Id, BookingNumber, paymentId, nowUtc));
     }
@@ -262,6 +290,14 @@ public sealed class Booking : AggregateRoot
         _timeline.Add(BookingTimelineEntry.Create(timelineCode, timelineMessage, nowUtc, actorId));
         Status = to;
         SetUpdatedAudit(nowUtc, actorId);
+    }
+
+    private void EnsureHoldActive(DateTime nowUtc)
+    {
+        if (ExpiresAtUtc is not null && nowUtc >= ExpiresAtUtc)
+        {
+            throw new ConflictException(ErrorResources.Get(ErrorCodes.BookingHoldExpired));
+        }
     }
 
     private void EnsureHost(Guid hostId)

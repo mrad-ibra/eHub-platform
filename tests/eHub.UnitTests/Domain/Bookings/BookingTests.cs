@@ -119,11 +119,52 @@ public sealed class BookingAggregateTests
     }
 
     [Fact]
+    public void Approve_AfterExpiry_Fails()
+    {
+        var booking = CreateBooking();
+        var act = () => booking.Approve(HostId, Now.Add(BookingDefaults.OwnerApprovalTtl));
+        act.Should().Throw<ConflictException>();
+    }
+
+    [Fact]
+    public void Confirm_AfterPaymentExpiry_Fails()
+    {
+        var booking = CreateBooking();
+        booking.Approve(HostId, Now.AddHours(1));
+        var act = () => booking.Confirm(Guid.NewGuid(), Now.AddHours(1).Add(BookingDefaults.PaymentTtl));
+        act.Should().Throw<ConflictException>();
+    }
+
+    [Fact]
+    public void BlocksCalendar_False_WhenPendingHoldPastExpiry()
+    {
+        var booking = CreateBooking();
+        booking.BlocksCalendar(Now.AddHours(11)).Should().BeTrue();
+        booking.BlocksCalendar(Now.Add(BookingDefaults.OwnerApprovalTtl)).Should().BeFalse();
+    }
+
+    [Fact]
+    public void CreateRequest_PastStart_Fails()
+    {
+        var act = () => Booking.CreateRequest(
+            "BK-2026-000000001",
+            AssetId,
+            RenterId,
+            HostId,
+            BookingPeriod.Create(new DateOnly(2026, 7, 1), new DateOnly(2026, 7, 2)),
+            Money.Create(100m, CurrencyId),
+            BookingAssetSnapshot.Create("BMW X5", HostId, Now, "BMW", "X5"),
+            BookingTerms.Create(1),
+            Now);
+
+        act.Should().Throw<ValidationFailedException>();
+    }
+
+    [Fact]
     public void PriceFreeze_IsIndependentOfLaterAssetPrice()
     {
         var booking = CreateBooking();
         booking.UnitPrice.Amount.Should().Be(100m);
-        // Aggregate does not expose SetPrice — freeze is structural.
         booking.TotalPrice.Amount.Should().Be(500m);
     }
 

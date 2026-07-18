@@ -1,5 +1,8 @@
 using Asp.Versioning;
 using eHub.Application.Bookings.Commands.CreateBooking;
+using eHub.Application.Bookings.Queries.GetBooking;
+using eHub.Application.Identity.Authorization;
+using eHub.Localization;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +18,7 @@ public sealed class BookingsController(ISender sender) : ControllerBase
     public const string IdempotencyHeader = "Idempotency-Key";
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicies.BookingsCreate)]
     [ProducesResponseType(typeof(CreateBookingResult), StatusCodes.Status201Created)]
     public async Task<ActionResult<CreateBookingResult>> Create(
         [FromBody] CreateBookingRequest request,
@@ -23,10 +27,8 @@ public sealed class BookingsController(ISender sender) : ControllerBase
         if (!Request.Headers.TryGetValue(IdempotencyHeader, out var keyValues)
             || string.IsNullOrWhiteSpace(keyValues.FirstOrDefault()))
         {
-            return Problem(
-                detail: "Idempotency-Key header is required.",
-                statusCode: StatusCodes.Status400BadRequest,
-                title: "validation_failed");
+            throw new Domain.Exceptions.ValidationFailedException(
+                ErrorResources.Get(ErrorCodes.BookingIdempotencyKeyRequired));
         }
 
         var result = await sender.Send(
@@ -51,8 +53,15 @@ public sealed class BookingsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(StatusCodes.Status501NotImplemented)]
-    public IActionResult GetById(Guid id) => StatusCode(StatusCodes.Status501NotImplemented);
+    [Authorize(Policy = AuthPolicies.BookingsRead)]
+    [ProducesResponseType(typeof(BookingDetailDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<BookingDetailDto>> GetById(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetBookingQuery(id), cancellationToken);
+        return Ok(result);
+    }
 }
 
 public sealed record CreateBookingRequest(

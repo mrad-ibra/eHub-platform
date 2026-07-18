@@ -9,5 +9,6 @@ public interface IJwtTokenService
         string email,
         string accountKind,
         IEnumerable<string> roles,
+        IEnumerable<string>? permissions = null,
         Guid? sessionId = null);
 }

@@ -63,4 +63,12 @@ public static class ErrorCodes
     public const string BookingReasonTooLong = nameof(BookingReasonTooLong);
     public const string BookingNotExpiredYet = nameof(BookingNotExpiredYet);
     public const string BookingIdempotencyKeyRequired = nameof(BookingIdempotencyKeyRequired);
+    public const string BookingStartDateInPast = nameof(BookingStartDateInPast);
+    public const string BookingHoldExpired = nameof(BookingHoldExpired);
+    public const string BookingIdempotencyPayloadMismatch = nameof(BookingIdempotencyPayloadMismatch);
+    public const string BookingDriverNotSupported = nameof(BookingDriverNotSupported);
+    public const string BookingDeliveryNotSupported = nameof(BookingDeliveryNotSupported);
+    public const string BookingPickupAddressRequired = nameof(BookingPickupAddressRequired);
+    public const string BookingDropoffAddressRequired = nameof(BookingDropoffAddressRequired);
+    public const string JwtSecretPlaceholder = nameof(JwtSecretPlaceholder);
 }

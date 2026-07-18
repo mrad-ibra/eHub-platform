@@ -1,4 +1,6 @@
 using eHub.Domain.Assets;
+using eHub.Domain.Exceptions;
+using eHub.Localization;
 
 namespace eHub.Domain.Bookings;
 
@@ -13,7 +15,6 @@ public static class BookingAvailability
         BookingPeriod existingPeriod,
         int existingBufferDays)
     {
-        // Request occupied range vs existing occupied range (symmetric).
         var requestOccupiedEnd = requested.OccupiedEnd(requestBufferDays);
         var existingOccupiedEnd = existingPeriod.OccupiedEnd(existingBufferDays);
 
@@ -21,23 +22,41 @@ public static class BookingAvailability
                && requestOccupiedEnd >= existingPeriod.StartDate;
     }
 
+    /// <summary>
+    /// Asset unavailable/maintenance blocks conflict with the occupied range (rental + preparation buffer).
+    /// </summary>
     public static bool ConflictsWithAssetBlock(
         BookingPeriod requested,
+        int requestBufferDays,
         AssetAvailabilityBlock block)
-        => requested.Overlaps(block.StartDate, block.EndDate);
+    {
+        var occupiedEnd = requested.OccupiedEnd(requestBufferDays);
+        return requested.StartDate <= block.EndDate && occupiedEnd >= block.StartDate;
+    }
 
     public static void EnsureRentalDaysAllowed(BookingPeriod period, BookingTerms terms)
     {
         if (terms.MinRentalDays is { } min && period.Days < min)
         {
-            throw new Exceptions.ValidationFailedException(
-                Localization.ErrorResources.Get(Localization.ErrorCodes.BookingRentalDaysInvalid));
+            throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.BookingRentalDaysInvalid));
         }
 
         if (terms.MaxRentalDays is { } max && period.Days > max)
         {
-            throw new Exceptions.ValidationFailedException(
-                Localization.ErrorResources.Get(Localization.ErrorCodes.BookingRentalDaysInvalid));
+            throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.BookingRentalDaysInvalid));
+        }
+    }
+
+    /// <summary>
+    /// v1 business date = UTC calendar date from <paramref name="nowUtc"/>.
+    /// Location timezone rules are a follow-up decision.
+    /// </summary>
+    public static void EnsureStartNotInPast(BookingPeriod period, DateTime nowUtc)
+    {
+        var today = DateOnly.FromDateTime(nowUtc);
+        if (period.StartDate < today)
+        {
+            throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.BookingStartDateInPast));
         }
     }
 }
