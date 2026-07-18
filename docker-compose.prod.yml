@@ -1,0 +1,58 @@
+# Production-oriented compose. Do not publish DB/Redis ports publicly in real deploys;
+# prefer private network + managed services. Override secrets via env / secret store.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ehub-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-ehub}
+    volumes:
+      - ehub_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ehub_internal
+
+  redis:
+    image: redis:7-alpine
+    container_name: ehub-redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD}"]
+    volumes:
+      - ehub_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ehub_internal
+
+  # API image: build when Dockerfile is ready
+  # api:
+  #   image: ${EHUB_API_IMAGE:-ehub-api:latest}
+  #   restart: always
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   environment:
+  #     ConnectionStrings__Database: ...
+  #     ConnectionStrings__Redis: ...
+  #   networks:
+  #     - ehub_internal
+
+volumes:
+  ehub_postgres_data:
+  ehub_redis_data:
+
+networks:
+  ehub_internal:
+    driver: bridge

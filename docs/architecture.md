@@ -8,11 +8,11 @@ Modular Monolith + Clean Architecture + DDD + CQRS (MediatR).
 eHub.Api                → HTTP, auth, ProblemDetails, versioning
 eHub.Application        → Commands/Queries (vertical slices), validators, ports
 eHub.Domain             → Aggregates, VOs, domain rules
-eHub.Localization       → Error/Message resources (.resx)
+eHub.Localization       → Error/Message resources (.resx) — separate project
 eHub.Infrastructure     → Adapters (JWT, email, in-memory repos, seed)
 eHub.Persistence        → EF Core (planned)
 eHub.SharedKernel       → Cross-cutting primitives
-eHub.Contracts          → Shared contracts (optional)
+eHub.Contracts          → Reserved / empty — feature DTOs stay in Application
 ```
 
 ## Dependency rule

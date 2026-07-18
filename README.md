@@ -2,30 +2,74 @@
 
 **Rent Anything. Anytime. Anywhere.**
 
-eHub is a unified marketplace where individuals and businesses can list and rent physical assets — from vehicles and watercraft to construction equipment and generators.
+Unified marketplace for listing and renting physical assets (vehicles, watercraft, equipment, generators, …) under one **universal `Asset`** model.
 
-## Product Vision
-
-Any natural or legal person can rent out their assets on a single platform. Categories include cars, motorcycles, scooters, bicycles, boats, ships, jet skis, tow trucks, tractors, excavators, forklifts, generators, and construction machinery. New categories can be added without redesigning the system.
-
-## Tech Stack
+## Tech stack
 
 | Layer | Technology |
 | --- | --- |
-| Backend | ASP.NET Core 9, C#, PostgreSQL, EF Core, MediatR (CQRS), FluentValidation, Serilog, Redis, SignalR, Docker |
+| Backend | ASP.NET Core 9, C#, MediatR (CQRS), FluentValidation, Serilog |
+| Data (planned) | PostgreSQL, EF Core, Redis |
+| Realtime (planned) | SignalR |
 | Frontend | Next.js, Tailwind CSS |
-| Mobile | Flutter (later phase) |
+| Mobile | Flutter (later) |
 
-## Repository
+## Solution layout
 
-| Branch | Purpose |
-| --- | --- |
-| `main` | Production-ready releases |
-| `develop` | Integration branch for ongoing development |
+```text
+src/
+  eHub.Api
+  eHub.Application      # vertical slices (Commands/Queries)
+  eHub.Domain           # aggregates, VOs, rules
+  eHub.Localization     # ErrorCodes + .resx
+  eHub.Infrastructure
+  eHub.Persistence
+  eHub.SharedKernel
+  eHub.Contracts        # reserved (empty) — feature DTOs live in Application
+docs/                   # architecture, ADR, ERD, API, BRS, C4, …
+```
 
-## Getting Started
+## Getting started
 
-Project scaffolding and local setup instructions will be added in subsequent EPIC 0 tasks.
+```bash
+# Infra (Postgres + Redis + pgAdmin)
+docker compose -f docker-compose.dev.yml up -d
+
+dotnet restore
+dotnet build
+dotnet test
+dotnet run --project src/eHub.Api
+```
+
+Swagger is available in Development. See [docs/api.md](docs/api.md).
+
+## Roadmap
+
+| Phase | Focus | Status |
+| --- | --- | --- |
+| **Current** | Identity, Catalog, Assets, docs/ADR, Localization project | In progress |
+| **Next** | EF Core + indexes + AsNoTracking; Booking domain design (BRS + sequences) | Planned |
+| **Soon** | Booking + Payment aggregates, Outbox, optimistic concurrency | Planned |
+| **Later** | Notification, GPS, Chat (SignalR), Search abstraction → OpenSearch | Planned |
+| **Ops** | OpenTelemetry, compose.prod hardening, Idempotency keys | Planned |
+
+### Future modules (must stay separate)
+
+- **Booking** — own aggregate (availability, race conditions, distributed lock / concurrency)
+- **Payment** — own aggregate/module (never inside Asset)
+- **Notification** — email/SMS/push via domain events + outbox
+- **GPS / Chat / Search** — own modules
+
+## Development rules
+
+1. Before a sprint: lock Aggregate / VOs / Domain Events / business rules, then code.
+2. Controllers stay thin; business rules live in Domain.
+3. Cross-aggregate references are **Id-only** (no navigations on domain models).
+4. Keep `Asset` lean via internal components; new concerns → new component or new module.
+5. Errors → RFC 7807 ProblemDetails; strings → `eHub.Localization`.
+6. Prefer typed repositories over generic CRUD stores.
+
+More: [docs/README.md](docs/README.md).
 
 ## License
 

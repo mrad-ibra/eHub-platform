@@ -15,5 +15,9 @@ One `Asset` aggregate root. Category/brand/model meaning comes from Catalog FKs 
 ## Consequences
 
 - No Car/Boat/Excavator roots.
-- Future concerns (GPS, Insurance, Reviews) become new components or separate aggregates/modules—not infinite growth of `Asset.cs`.
+- Internal components act as **domain managers** inside the aggregate:
+  - `AssetLifecycle` — status / version history
+  - `AssetCommercialTerms` — pricing, location, rules, deposit, support
+  - `AssetMediaCollection` / `AssetAvailability` / `AssetAttributeCollection`
+- Future Insurance / GPS / Reviews / Maintenance → **new component** or **separate module/aggregate** (never Booking/Payment inside Asset).
 - Payment and Booking must not be nested inside Asset.
