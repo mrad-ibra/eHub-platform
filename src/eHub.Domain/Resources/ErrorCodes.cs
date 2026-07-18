@@ -1,0 +1,51 @@
+namespace eHub.Domain.Resources;
+
+/// <summary>Resource keys for error messages. Values live in Errors*.resx.</summary>
+public static class ErrorCodes
+{
+    public const string FieldRequired = nameof(FieldRequired);
+    public const string PermissionCodeRequired = nameof(PermissionCodeRequired);
+    public const string PermissionCodeInvalidFormat = nameof(PermissionCodeInvalidFormat);
+    public const string PermissionCodeEmptySegment = nameof(PermissionCodeEmptySegment);
+    public const string SystemRoleRenameForbidden = nameof(SystemRoleRenameForbidden);
+    public const string SystemPermissionRenameForbidden = nameof(SystemPermissionRenameForbidden);
+    public const string RoleUnknownPermission = nameof(RoleUnknownPermission);
+    public const string WeatherDaysOutOfRange = nameof(WeatherDaysOutOfRange);
+    public const string ValidationFailed = nameof(ValidationFailed);
+    public const string Unauthorized = nameof(Unauthorized);
+    public const string InternalError = nameof(InternalError);
+    public const string NotFound = nameof(NotFound);
+    public const string BadRequest = nameof(BadRequest);
+    public const string RefreshTokenInvalidExpiry = nameof(RefreshTokenInvalidExpiry);
+    public const string RefreshTokenExpired = nameof(RefreshTokenExpired);
+    public const string RefreshTokenRevoked = nameof(RefreshTokenRevoked);
+    public const string RefreshTokenInvalid = nameof(RefreshTokenInvalid);
+    public const string InvalidCredentials = nameof(InvalidCredentials);
+    public const string AccountInactive = nameof(AccountInactive);
+    public const string EmailNotConfirmed = nameof(EmailNotConfirmed);
+    public const string JwtConfigMissing = nameof(JwtConfigMissing);
+    public const string EmailInvalid = nameof(EmailInvalid);
+    public const string PasswordTooShort = nameof(PasswordTooShort);
+    public const string UserNotFound = nameof(UserNotFound);
+    public const string InvalidVerificationLink = nameof(InvalidVerificationLink);
+    public const string InvalidPasswordResetLink = nameof(InvalidPasswordResetLink);
+    public const string EntityDeleted = nameof(EntityDeleted);
+    public const string SessionNotFound = nameof(SessionNotFound);
+    public const string SessionIdRequired = nameof(SessionIdRequired);
+    public const string CatalogCodeTooLong = nameof(CatalogCodeTooLong);
+    public const string CatalogDecimalPlacesOutOfRange = nameof(CatalogDecimalPlacesOutOfRange);
+    public const string CatalogItemNotFound = nameof(CatalogItemNotFound);
+    public const string AssetNotFound = nameof(AssetNotFound);
+    public const string AssetPriceInvalid = nameof(AssetPriceInvalid);
+    public const string AssetAvailabilityRangeInvalid = nameof(AssetAvailabilityRangeInvalid);
+    public const string AssetAvailabilityOverlap = nameof(AssetAvailabilityOverlap);
+    public const string AssetAvailabilityNotFound = nameof(AssetAvailabilityNotFound);
+    public const string AssetMediaNotFound = nameof(AssetMediaNotFound);
+    public const string AssetPricingRequired = nameof(AssetPricingRequired);
+    public const string AssetLocationRequired = nameof(AssetLocationRequired);
+    public const string AssetImageRequired = nameof(AssetImageRequired);
+    public const string AssetInvalidStatusTransition = nameof(AssetInvalidStatusTransition);
+    public const string AssetPendingApprovalLocked = nameof(AssetPendingApprovalLocked);
+    public const string AssetArchived = nameof(AssetArchived);
+    public const string AssetAccessDenied = nameof(AssetAccessDenied);
+}

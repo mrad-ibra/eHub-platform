@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="FieldRequired" xml:space="preserve">
+    <value>{0} tələb olunur.</value>
+  </data>
+  <data name="PermissionCodeRequired" xml:space="preserve">
+    <value>İcazə kodu tələb olunur.</value>
+  </data>
+  <data name="PermissionCodeInvalidFormat" xml:space="preserve">
+    <value>İcazə kodu 'module.resource.action' və ya 'module.action' formatında olmalıdır.</value>
+  </data>
+  <data name="PermissionCodeEmptySegment" xml:space="preserve">
+    <value>İcazə kodunda boş seqment var.</value>
+  </data>
+  <data name="SystemRoleRenameForbidden" xml:space="preserve">
+    <value>Sistem rollarının adı dəyişdirilə bilməz.</value>
+  </data>
+  <data name="SystemPermissionRenameForbidden" xml:space="preserve">
+    <value>Sistem icazələrinin adı dəyişdirilə bilməz.</value>
+  </data>
+  <data name="RoleUnknownPermission" xml:space="preserve">
+    <value>'{0}' rolu naməlum '{1}' icazəsinə istinad edir.</value>
+  </data>
+  <data name="WeatherDaysOutOfRange" xml:space="preserve">
+    <value>Gün sayı 1 ilə 14 arasında olmalıdır.</value>
+  </data>
+  <data name="ValidationFailed" xml:space="preserve">
+    <value>Bir və ya bir neçə doğrulama xətası baş verdi.</value>
+  </data>
+  <data name="Unauthorized" xml:space="preserve">
+    <value>Bu resursa daxil olmaq üçün autentifikasiya tələb olunur.</value>
+  </data>
+  <data name="InternalError" xml:space="preserve">
+    <value>Gözlənilməz xəta baş verdi.</value>
+  </data>
+  <data name="NotFound" xml:space="preserve">
+    <value>Axtarılan resurs tapılmadı.</value>
+  </data>
+  <data name="BadRequest" xml:space="preserve">
+    <value>Sorğu etibarsızdır.</value>
+  </data>
+  <data name="RefreshTokenInvalidExpiry" xml:space="preserve">
+    <value>Refresh token-un bitmə vaxtı gələcəkdə olmalıdır.</value>
+  </data>
+  <data name="RefreshTokenExpired" xml:space="preserve">
+    <value>Refresh token-un müddəti bitib.</value>
+  </data>
+  <data name="RefreshTokenRevoked" xml:space="preserve">
+    <value>Refresh token ləğv edilib.</value>
+  </data>
+  <data name="RefreshTokenInvalid" xml:space="preserve">
+    <value>Refresh token etibarsızdır.</value>
+  </data>
+  <data name="InvalidCredentials" xml:space="preserve">
+    <value>E-poçt və ya şifrə yanlışdır.</value>
+  </data>
+  <data name="AccountInactive" xml:space="preserve">
+    <value>Bu hesab qeyri-aktivdir.</value>
+  </data>
+  <data name="EmailNotConfirmed" xml:space="preserve">
+    <value>E-poçt ünvanı təsdiqlənməyib.</value>
+  </data>
+  <data name="JwtConfigMissing" xml:space="preserve">
+    <value>JWT konfiqurasiyası yoxdur və ya etibarsızdır.</value>
+  </data>
+  <data name="EmailInvalid" xml:space="preserve">
+    <value>Düzgün e-poçt ünvanı tələb olunur.</value>
+  </data>
+  <data name="PasswordTooShort" xml:space="preserve">
+    <value>Şifrə ən azı {0} simvol olmalıdır.</value>
+  </data>
+  <data name="UserNotFound" xml:space="preserve">
+    <value>İstifadəçi tapılmadı.</value>
+  </data>
+  <data name="InvalidVerificationLink" xml:space="preserve">
+    <value>E-poçt təsdiq linki etibarsızdır və ya müddəti bitib.</value>
+  </data>
+  <data name="InvalidPasswordResetLink" xml:space="preserve">
+    <value>Şifrə sıfırlama linki etibarsızdır və ya müddəti bitib.</value>
+  </data>
+  <data name="EntityDeleted" xml:space="preserve">
+    <value>Bu resurs silinib.</value>
+  </data>
+  <data name="SessionNotFound" xml:space="preserve">
+    <value>Sessiya tapılmadı.</value>
+  </data>
+  <data name="SessionIdRequired" xml:space="preserve">
+    <value>Bu əməliyyat üçün sessiya identifikatoru tələb olunur.</value>
+  </data>
+  <data name="CatalogCodeTooLong" xml:space="preserve">
+    <value>Kataloq kodu ən çox 64 simvol ola bilər.</value>
+  </data>
+  <data name="CatalogDecimalPlacesOutOfRange" xml:space="preserve">
+    <value>Onluq yerlərin sayı 0 ilə 6 arasında olmalıdır.</value>
+  </data>
+  <data name="CatalogItemNotFound" xml:space="preserve">
+    <value>Kataloq elementi tapılmadı.</value>
+  </data>
+  <data name="AssetNotFound" xml:space="preserve">
+    <value>Aktiv tapılmadı.</value>
+  </data>
+  <data name="AssetPriceInvalid" xml:space="preserve">
+    <value>Aktivin qiyməti sıfır və ya daha böyük olmalıdır.</value>
+  </data>
+  <data name="AssetAvailabilityRangeInvalid" xml:space="preserve">
+    <value>Mövcudluq bitmə tarixi başlanğıcdan əvvəl ola bilməz.</value>
+  </data>
+  <data name="AssetAvailabilityOverlap" xml:space="preserve">
+    <value>Mövcudluq bloku mövcud blokla üst-üstə düşür.</value>
+  </data>
+  <data name="AssetAvailabilityNotFound" xml:space="preserve">
+    <value>Mövcudluq bloku tapılmadı.</value>
+  </data>
+  <data name="AssetMediaNotFound" xml:space="preserve">
+    <value>Aktiv media elementi tapılmadı.</value>
+  </data>
+  <data name="AssetPricingRequired" xml:space="preserve">
+    <value>Yayımlamazdan əvvəl qiymət tələb olunur.</value>
+  </data>
+  <data name="AssetLocationRequired" xml:space="preserve">
+    <value>Yayımlamazdan əvvəl məkan tələb olunur.</value>
+  </data>
+  <data name="AssetImageRequired" xml:space="preserve">
+    <value>Yayımlamazdan əvvəl ən azı bir şəkil tələb olunur.</value>
+  </data>
+  <data name="AssetInvalidStatusTransition" xml:space="preserve">
+    <value>Bu status keçidi aktiv üçün icazə verilmir.</value>
+  </data>
+  <data name="AssetPendingApprovalLocked" xml:space="preserve">
+    <value>Təsdiq gözləyən aktiv redaktə edilə bilməz.</value>
+  </data>
+  <data name="AssetArchived" xml:space="preserve">
+    <value>Arxivlənmiş aktivlər dəyişdirilə bilməz.</value>
+  </data>
+  <data name="AssetAccessDenied" xml:space="preserve">
+    <value>Bu aktivə giriş icazəniz yoxdur.</value>
+  </data>
+</root>
