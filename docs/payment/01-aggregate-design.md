@@ -1,6 +1,6 @@
 # EHUB-601 — Payment Aggregate Design
 
-**Status:** DRAFT — awaiting Architect review.  
+**Status:** READY FOR ARCHITECT REVIEW  
 **Boundary:** Payment is its **own** aggregate. It is **not** inside Booking. Booking and Payment reference each other by **id only** (L7).
 
 ## Aggregate diagram

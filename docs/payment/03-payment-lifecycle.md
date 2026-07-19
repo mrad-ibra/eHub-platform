@@ -1,6 +1,6 @@
 # EHUB-603 — Payment Lifecycle
 
-**Status:** DRAFT — awaiting Architect review.
+**Status:** READY FOR ARCHITECT REVIEW
 
 ## Happy path (approve → pay → confirm)
 
@@ -80,13 +80,29 @@ sequenceDiagram
   end
 ```
 
+## Failed payment path (L10)
+
+```text
+Verified webhook → Failed
+        ↓
+Payment.MarkFailed(normalized reason)
+        ↓
+Booking remains PendingPayment (TTL still ticking)
+        ↓
+Notify renter · allow retry (new Payment) while hold active
+        ↓
+If still unpaid at 15m → Booking + Payment Expired (hold released)
+```
+
+Booking is **never** stuck forever waiting on a failed charge.
+
 ## Timeout / expiry path
 
 ```text
 15m elapses with no Succeeded
         ↓
 Booking expire job → Booking Expired (hold released)
-Payment → Expired (by payment expire job / reconcile)
+Payment → Expired (payment expire / reconcile)
         ↓
 Provider session abandoned / cancelled at provider
 ```
@@ -94,17 +110,17 @@ Provider session abandoned / cancelled at provider
 ## Late callback path (L4)
 
 ```text
-Payment session still open at provider after Booking Expired
+Booking already Expired (or other terminal)
+Payment still Pending/Authorized OR provider still accepts pay
         ↓
-Customer pays late → provider webhook (verified, deduped)
+Customer pays late → verified + deduped webhook
         ↓
-Payment.MarkSucceeded — recorded as attempt + Succeeded row
-        ↓
-Booking is Expired (terminal) → NOT confirmed
-        ↓
-Raise reconciliation: PaymentSucceededForExpiredBooking
-        ↓
-Auto-refund per policy (07-refund-strategy.md)  →  Refunded
+If Payment still Pending/Authorized:
+  MarkSucceeded (money recorded) → do NOT Confirm Booking
+  → auto full refund → Refunded
+If Payment already Expired/Failed/Cancelled:
+  do NOT flip to Succeeded
+  → audit attempt + reconcile/refund at provider if money moved
 ```
 
 ## Refund path (separate operation, L5)
@@ -137,5 +153,6 @@ Status → PartiallyRefunded | Refunded
 ## Sign-off
 
 - [ ] Happy path + confirm-after-succeeded approved
-- [ ] Late-callback → reconcile/auto-refund approved
+- [ ] Failed → TTL continues + retry approved (L10)
+- [ ] Late-callback → no confirm + auto-refund approved
 - [ ] Refund lifecycle approved

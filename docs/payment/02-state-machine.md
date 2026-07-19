@@ -1,22 +1,22 @@
 # EHUB-602 — Payment State Machine
 
-**Status:** DRAFT — awaiting Architect review.
+**Status:** READY FOR ARCHITECT REVIEW
 
-## Statuses
+## Statuses (locked candidate)
 
 | Code | Meaning | Money captured? | Terminal? |
 |------|---------|-----------------|-----------|
-| `Created` | Payment row created, provider session not yet opened | No | No |
-| `Pending` | Provider session open, awaiting result | No | No |
-| `Authorized` | Funds authorized (auth-only), not captured — reserved for future | Held | No |
-| `Succeeded` | Captured / paid — **the only state that confirms a Booking** (L3) | Yes | No* |
-| `Failed` | Provider declined / capture failed | No | **Yes** |
-| `Cancelled` | Cancelled before success (user/host/system) | No | **Yes** |
-| `Expired` | Payment window (15m) elapsed with no success | No | **Yes** |
-| `PartiallyRefunded` | Succeeded then partially refunded | Yes (net) | No* |
+| `Created` | Row created; provider session not open | No | No |
+| `Pending` | Provider session open; awaiting result | No | No |
+| `Authorized` | Auth-only hold (future); not captured | Held | No |
+| `Succeeded` | Captured — **only** state that can confirm Booking (L3) | Yes | No* |
+| `Failed` | Declined / capture failed | No | **Yes** |
+| `Cancelled` | Cancelled before success | No | **Yes** |
+| `Expired` | 15m window elapsed without success | No | **Yes** |
+| `PartiallyRefunded` | Some but not all refunded | Yes (net) | No* |
 | `Refunded` | Fully refunded | No (net 0) | **Yes** |
 
-\* `Succeeded` / `PartiallyRefunded` are not terminal because refunds may still occur (L5).
+\* `Succeeded` / `PartiallyRefunded` allow further refunds (L5).
 
 ## Transition diagram
 
@@ -30,7 +30,7 @@ stateDiagram-v2
   Pending --> Authorized: Auth-only (future)
   Pending --> Succeeded: Verified webhook capture OK
   Pending --> Failed: Verified webhook declined
-  Pending --> Cancelled: User/host/system cancel
+  Pending --> Cancelled: Cancel
   Pending --> Expired: 15m window elapsed
 
   Authorized --> Succeeded: Capture OK
@@ -38,9 +38,9 @@ stateDiagram-v2
   Authorized --> Cancelled: Auth voided
   Authorized --> Expired: Window elapsed
 
-  Succeeded --> PartiallyRefunded: Refund < remaining
-  Succeeded --> Refunded: Refund == full
-  PartiallyRefunded --> PartiallyRefunded: Further partial refund
+  Succeeded --> PartiallyRefunded: Partial refund settled
+  Succeeded --> Refunded: Full refund settled
+  PartiallyRefunded --> PartiallyRefunded: Further partial
   PartiallyRefunded --> Refunded: Remaining refunded
 
   Failed --> [*]
@@ -49,41 +49,43 @@ stateDiagram-v2
   Refunded --> [*]
 ```
 
-**Critical:** Only `Pending`/`Authorized` → `Succeeded` confirms a Booking, and only if the Booking is still in `PendingPayment` with an **active** hold. A `Succeeded` arriving for an `Expired`/terminal Booking does **not** confirm it (L4) — it triggers reconciliation/auto-refund.
+## Allowed transitions
 
-## Allowed transitions matrix
-
-| From \ To | Pending | Authorized | Succeeded | Failed | Cancelled | Expired | PartRefunded | Refunded |
-|-----------|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| From \ To | Pending | Authorized | Succeeded | Failed | Cancelled | Expired | PartiallyRefunded | Refunded |
+|-----------|:-------:|:----------:|:---------:|:------:|:---------:|:-------:|:-----------------:|:--------:|
 | Created | ✓ | | | | ✓ | ✓ | | |
 | Pending | | ✓ | ✓ | ✓ | ✓ | ✓ | | |
 | Authorized | | — | ✓ | ✓ | ✓ | ✓ | | |
 | Succeeded | | | — | | | | ✓ | ✓ |
 | PartiallyRefunded | | | | | | | ✓ | ✓ |
-| Failed / Cancelled / Expired / Refunded | | | | | | | | (terminal) |
+| Failed / Cancelled / Expired / Refunded | | | | | | | | terminal |
 
-## Idempotent no-op transitions
+## Late success vs terminal Payment (L4)
 
-Because webhooks may be replayed (L2), re-applying the **same** target status from the same provider event is a **no-op success** (ack `200`, no second effect), not an error. Only a *different* target from a terminal state is illegal.
+| Payment status when money arrives | Booking status | Action |
+|-----------------------------------|----------------|--------|
+| `Pending` / `Authorized` | `PendingPayment` + hold active | → `Succeeded` → Outbox confirm (L3) |
+| `Pending` / `Authorized` | `Expired` / terminal | → `Succeeded` (money recorded) → **no Booking confirm** → auto-refund → `Refunded` |
+| Already `Expired` / `Failed` / `Cancelled` | any | **Do not** flip to `Succeeded`. Audit attempt + reconcile / refund at provider if needed |
 
-## Illegal examples
+Illegal: `Expired` → `Succeeded` as a normal status transition.
 
-- `Expired` → `Succeeded` (late callback confirming a dead payment). Late success is recorded as an attempt + reconciliation, not a status flip on a terminal Payment.
-- `Failed` → `Succeeded` on a **different** event.
-- Refund from `Pending` (nothing captured yet).
-- `Succeeded` with captured amount ≠ `Amount` (BR-PAY-001 mismatch → treated as failure/reconcile).
+## Idempotent no-ops (L2)
 
-## Mapping to Booking
+Re-applying the **same** target status from the **same** provider event = **no-op success** (`200`), not an error.
 
-| Payment transition | Booking effect (via Outbox) |
-|--------------------|-----------------------------|
-| → `Succeeded` (hold active) | `BookingConfirmed` |
-| → `Failed` / `Expired` | Booking expire path (per BR-BKG-007/010) |
-| → `Refunded` | `BookingRefunded` |
-| → `Succeeded` (Booking terminal) | **No confirm** — reconcile/auto-refund (L4) |
+## Booking mapping
+
+| Payment event | Booking effect |
+|---------------|----------------|
+| → `Succeeded` + hold active | `Confirm(paymentId)` via Outbox |
+| → `Succeeded` + Booking terminal | **No confirm** → auto-refund |
+| → `Failed` | Booking TTL continues; notify; optional retry (L10) |
+| → `Expired` | Align with Booking expire / hold release |
+| → `Refunded` / partial | `BookingRefunded` / notify via Outbox |
 
 ## Sign-off
 
-- [ ] Status list locked
-- [ ] `Succeeded`-only-confirms rule locked
-- [ ] Idempotent no-op transition semantics approved
+- [ ] Nine statuses locked
+- [ ] Succeeded-only-confirms + late-callback table approved
+- [ ] Failed does not freeze Booking forever approved

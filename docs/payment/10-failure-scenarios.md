@@ -1,17 +1,18 @@
 # EHUB-610 — Failure Scenarios
 
-**Status:** DRAFT — awaiting Architect review.  
+**Status:** READY FOR ARCHITECT REVIEW  
 Each row must map to a test in Sprint 6.1 (see [11-acceptance-edge-tests.md](11-acceptance-edge-tests.md)).
 
 ## Payment core
 
 | # | Scenario | Expected |
 |---|----------|----------|
-| F-PAY-01 | Client sends a different amount than Booking total | Amount ignored; Payment uses Booking `TotalPrice` snapshot (L1) |
+| F-PAY-01 | Client sends amount ≠ Booking total | `400`; Payment uses / only ever stores snapshot (L1) |
 | F-PAY-02 | Payment succeeds while Booking still `PendingPayment` + hold active | `BookingConfirmed` via Outbox (L3) |
-| F-PAY-03 | Payment succeeds **after** Booking `Expired` (late callback) | Booking NOT confirmed; reconcile → auto-refund (L4) |
+| F-PAY-03 | Payment succeeds **after** Booking `Expired` (late callback) | Booking NOT confirmed; auto full refund (L4) |
 | F-PAY-04 | 15m window elapses, no payment | Payment → `Expired`; Booking → `Expired`; hold released |
-| F-PAY-05 | Provider declines | Payment → `Failed` with normalized `FailureReason`; Booking expire path |
+| F-PAY-05 | Provider declines | Payment → `Failed`; Booking stays payable until TTL; retry allowed (L10) |
+| F-PAY-05b | Initiate payment for Expired booking | `409 booking_not_payable` |
 
 ## Webhook
 
@@ -62,9 +63,11 @@ Each row must map to a test in Sprint 6.1 (see [11-acceptance-edge-tests.md](11-
 4. Provider is behind an adapter; domain sees normalized results only (L8).
 5. Cross-aggregate effects flow through the Outbox; consumers are idempotent (L7, L9).
 6. Refund is additive and audited; never an in-place edit (L5).
+7. Failed payment does not freeze Booking forever (L10).
 
 ## Sign-off
 
 - [ ] Late-callback + duplicate-webhook rows approved
+- [ ] Failed→TTL/retry (L10) approved
 - [ ] Crash/outbox recovery rows approved
 - [ ] Refund + anti-corruption rows approved

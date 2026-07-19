@@ -1,6 +1,6 @@
 # EHUB-606 — Idempotency
 
-**Status:** DRAFT — awaiting Architect review.
+**Status:** READY FOR ARCHITECT REVIEW
 
 ## Principle
 

@@ -1,64 +1,89 @@
 # EPIC 6 — Payment
 
-**Sprint 6.0:** Payment Architecture Pack — **DRAFT — awaiting Architect review**
+**Sprint 6.0:** Payment Architecture Pack — **READY FOR ARCHITECT REVIEW**  
+**Implementation:** Sprint 6.1 starts **only after** this pack is **APPROVED**.
 
-Design only. No code, no migrations, no provider integration this sprint. This pack defines the aggregate, state machine, provider anti-corruption boundary, webhook + idempotency strategy, refund model, and the failure/acceptance matrix that Sprint 6.1 will implement against.
-
-> **Sprint 6.1 implementation starts only after Architect sign-off is APPROVED on this pack.** Until then every document below is a proposal, not a contract.
+Design only. No code · no migrations · no provider SDK wiring in 6.0.
 
 ## Documents
 
-| # | Document | Purpose | Status |
-|---|----------|---------|--------|
-| — | [README.md](README.md) | Index + locked principles | DRAFT |
-| 00 | [00-business-rules.md](00-business-rules.md) | Payment business rules (BR-PAY-*) | DRAFT |
-| 01 | [01-aggregate-design.md](01-aggregate-design.md) | Payment aggregate boundary + model | DRAFT |
-| 02 | [02-state-machine.md](02-state-machine.md) | Statuses + transitions | DRAFT |
-| 03 | [03-payment-lifecycle.md](03-payment-lifecycle.md) | End-to-end lifecycle | DRAFT |
-| 04 | [04-provider-strategy.md](04-provider-strategy.md) | Provider strategy + anti-corruption adapter | DRAFT |
-| 05 | [05-webhook-strategy.md](05-webhook-strategy.md) | Signature verify + inbox dedupe | DRAFT |
-| 06 | [06-idempotency.md](06-idempotency.md) | Idempotency keys + exactly-once effects | DRAFT |
-| 07 | [07-refund-strategy.md](07-refund-strategy.md) | Refunds as separate audited operation | DRAFT |
-| 08 | [08-database-design.md](08-database-design.md) | Logical ER + tables + indexes | DRAFT |
-| 09 | [09-api-contract.md](09-api-contract.md) | REST + webhook contract | DRAFT |
-| 10 | [10-failure-scenarios.md](10-failure-scenarios.md) | Failure matrix (F-PAY-*) | DRAFT |
-| 11 | [11-acceptance-edge-tests.md](11-acceptance-edge-tests.md) | AC / edges / test scenarios | DRAFT |
+| # | Document | Purpose |
+|---|----------|---------|
+| — | [README.md](README.md) | Index + locked principles + review checklist |
+| 00 | [00-business-rules.md](00-business-rules.md) | BR-PAY-* |
+| 01 | [01-aggregate-design.md](01-aggregate-design.md) | Aggregate boundary + model |
+| 02 | [02-state-machine.md](02-state-machine.md) | Statuses + transitions |
+| 03 | [03-payment-lifecycle.md](03-payment-lifecycle.md) | End-to-end flows |
+| 04 | [04-provider-strategy.md](04-provider-strategy.md) | Provider ACL |
+| 05 | [05-webhook-strategy.md](05-webhook-strategy.md) | Signature + inbox |
+| 06 | [06-idempotency.md](06-idempotency.md) | Exactly-once effect |
+| 07 | [07-refund-strategy.md](07-refund-strategy.md) | Partial / full refund |
+| 08 | [08-database-design.md](08-database-design.md) | Logical ER |
+| 09 | [09-api-contract.md](09-api-contract.md) | REST + webhook |
+| 10 | [10-failure-scenarios.md](10-failure-scenarios.md) | F-PAY-* |
+| 11 | [11-acceptance-edge-tests.md](11-acceptance-edge-tests.md) | AC / edges / tests |
 
-## Locked principles (must hold across the whole pack)
+## Locked principles (non-negotiable for 6.1)
 
 | # | Principle |
 |---|-----------|
-| L1 | **Amount is authoritative from Booking.** Payment amount is taken from the Booking `TotalPrice` snapshot — the client-supplied price is **never** trusted. |
-| L2 | **Webhook exactly-once.** The same provider webhook is processed **once**; replays are deduplicated (idempotent). |
-| L3 | **Confirm after Succeeded.** A Booking becomes `Confirmed` **only after** Payment reaches `Succeeded`. |
-| L4 | **No late confirm.** A late payment callback **must NOT** confirm an `Expired` (or otherwise terminal) Booking. |
-| L5 | **Refund is separate.** Refund is a distinct operation with its own audit history — never an in-place status edit. |
-| L6 | **Signatures verified.** Every provider webhook signature **MUST** be verified before any effect. |
-| L7 | **Separate aggregates.** Payment and Booking are **separate aggregates**, linked only by id (no object references, no shared transaction on domain state). |
-| L8 | **Anti-corruption.** Provider responses are **not** bound directly into the domain model — they cross an adapter / anti-corruption layer. |
-| L9 | **Outbox to Booking.** Payment outcomes reach Booking **via the Outbox** (async, idempotent consumer) — never a direct in-process aggregate call. |
+| L1 | Amount from **Booking `TotalPrice` snapshot** — client price never trusted |
+| L2 | Same webhook processed **once** (inbox unique key) |
+| L3 | Booking `Confirmed` **only after** Payment `Succeeded` |
+| L4 | Late webhook **must not** confirm an `Expired`/terminal Booking |
+| L5 | Refund = **separate audited operation** (partial and full have distinct rules) |
+| L6 | Webhook **signature validation mandatory** before any effect |
+| L7 | Payment and Booking = **separate aggregates** (id-only) |
+| L8 | Provider-specific models **never** enter Domain (adapter / ACL) |
+| L9 | Payment → Booking effects only via **Outbox / events** |
+| L10 | Failed payment must **not** leave Booking stuck forever — TTL + optional retry while hold active |
 
-## Initial model (proposed)
+## Proposed model
 
 ```text
-Payment: BookingId, Amount, Currency, Provider, ProviderPaymentId,
-         Status, IdempotencyKey, FailureReason, PaidAtUtc, RefundedAmount
-Statuses: Created, Pending, Authorized, Succeeded, Failed,
-          Cancelled, PartiallyRefunded, Refunded, Expired
+Payment
+├── BookingId
+├── Amount / Currency          ← from Booking snapshot
+├── Provider / ProviderPaymentId?
+├── Status
+├── IdempotencyKey
+├── FailureReason?
+├── PaidAtUtc?
+├── RefundedAmount
+├── Version
+├── StatusHistory[]
+├── Attempts[]
+└── Refunds[]                  ← separate audited rows
+
+Statuses:
+  Created | Pending | Authorized | Succeeded | Failed
+  | Cancelled | Expired | PartiallyRefunded | Refunded
 ```
+
+## Architect review checklist
+
+- [ ] L1–L10 locked
+- [ ] State machine + late-callback / Failed→TTL rules approved
+- [ ] Partial vs full refund rules approved
+- [ ] Webhook verify → dedupe → apply order approved
+- [ ] Outbox boundary Booking↔Payment approved
+- [ ] Acceptance scenarios in [11](11-acceptance-edge-tests.md) sufficient for 6.1
 
 ## Relationship to Booking (EPIC 5)
 
-- Booking owns the **calendar + hold + price freeze**; Payment owns the **money**.
-- Booking `PendingPayment` (Hard Hold, 15m timer from Approve) is the **only** state from which a payment may succeed into `Confirmed`.
-- Payment TTL/timeout aligns with the Booking Payment TTL — see [00-business-rules.md](00-business-rules.md) BR-PAY-004.
-- Cross-aggregate coupling is via events only: `BookingApproved` → create Payment; `PaymentSucceeded` → `BookingConfirmed`.
+| Booking | Payment |
+|---------|---------|
+| Owns calendar, Soft/Hard Hold, price freeze | Owns money movement |
+| `PendingPayment` + 15m TTL | Must succeed inside that window |
+| Confirms only on `PaymentSucceeded` (hold active) | Emits events; never calls Booking directly |
+| Expire worker releases hold | Failed/Expired payments; retry only while Booking still payable |
 
-## Design-first checklist (this pack)
+## Design-first order
 
-Business Rules → Aggregate → State Machine → Lifecycle → Provider/ACL → Webhook → Idempotency → Refund → ER → API → Failures → AC/Edges/Tests → (6.1) code
+Business Rules → Aggregate → State Machine → Lifecycle → Provider → Webhook → Idempotency → Refund → ER → API → Failures → AC/Tests → **(6.1) code**
 
 ## Related
 
-- Booking pack: [../booking/README.md](../booking/README.md)
-- [ADR 0006 — Domain Primitives](../adr/0006-domain-primitives.md)
+- [../booking/README.md](../booking/README.md) — Booking Core COMPLETED  
+- [../observability.md](../observability.md)  
+- [ADR 0006](../adr/0006-domain-primitives.md)

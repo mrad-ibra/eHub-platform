@@ -11,7 +11,7 @@
 | [threat-model.md](threat-model.md) | Security threats & mitigations |
 | [performance-budget.md](performance-budget.md) | Latency & cache targets |
 | [booking/](booking/README.md) | **Sprint 5.2 COMPLETED** — Booking Core |
-| [payment/](payment/README.md) | **Sprint 6.0 DRAFT** — Payment Architecture Pack |
+| [payment/](payment/README.md) | **Sprint 6.0 READY FOR REVIEW** — Payment Architecture Pack |
 | [observability.md](observability.md) | OTel, metrics, correlation, health |
 | [booking-technical-design.md](booking-technical-design.md) | Pointer → `booking/` (legacy path) |
 | [adr/](adr/README.md) | Architecture Decision Records |
@@ -21,7 +21,7 @@
 **Design-first development:** lock Business Rules, Domain Model, State Machine, Sequences, ER, API Contract, Acceptance Criteria, Edge Cases, Failure Scenarios, and Test Scenarios — **then** code.
 
 **Sprint 5.2** = Booking Core — **APPROVED / COMPLETED** ([disposition](booking/14-sprint-52-final-disposition.md)).  
-**Sprint 6.0** = Payment design only — **DRAFT** awaiting Architect ([payment/](payment/README.md)).  
-**Sprint 6.1** = Payment implementation — only after 6.0 APPROVED.
+**Sprint 6.0** = Payment design only — **READY FOR ARCHITECT REVIEW** ([payment/](payment/README.md)).  
+**Sprint 6.1** = Payment implementation — only after 6.0 **APPROVED**.
 
 Especially for **Booking** (transactions, concurrency, availability) and **Payment** (separate aggregate).

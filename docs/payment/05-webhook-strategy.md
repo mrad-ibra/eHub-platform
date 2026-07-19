@@ -1,6 +1,6 @@
 # EHUB-605 — Webhook Strategy
 
-**Status:** DRAFT — awaiting Architect review.
+**Status:** READY FOR ARCHITECT REVIEW
 
 ## Principle
 

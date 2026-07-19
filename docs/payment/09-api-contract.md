@@ -1,6 +1,6 @@
 # EHUB-609 — API Contract
 
-**Status:** DRAFT — awaiting Architect review.
+**Status:** READY FOR ARCHITECT REVIEW
 
 **Base:** `/api/v1/payments`  
 **Auth:** JWT unless noted (webhook is signature-authenticated, not JWT).  
@@ -33,7 +33,7 @@
 
 Headers: `Idempotency-Key: <string>`
 
-> **No amount in the request.** Amount is taken from the Booking `TotalPrice` snapshot server-side (L1, BR-PAY-001). Any client-supplied amount is ignored.
+> **No amount in the request.** Amount is taken from the Booking `TotalPrice` snapshot server-side (L1, BR-PAY-001). If the client sends an `amount` field, respond **`400 validation_failed`** (do not silently ignore in production API).
 
 ### Response `201` (or `200` on idempotent replay)
 

@@ -1,6 +1,6 @@
 # EHUB-608 — Database Design
 
-**Status:** DRAFT — awaiting Architect review.  
+**Status:** READY FOR ARCHITECT REVIEW  
 Logical model for Sprint 6.x. **No migrations this sprint.**
 
 ## ER overview

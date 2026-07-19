@@ -1,6 +1,6 @@
 # EHUB-604 — Provider Strategy & Anti-Corruption
 
-**Status:** DRAFT — awaiting Architect review.
+**Status:** READY FOR ARCHITECT REVIEW
 
 ## Principle
 

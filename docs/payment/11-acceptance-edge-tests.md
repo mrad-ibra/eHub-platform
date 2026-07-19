@@ -1,26 +1,47 @@
 # Companion — Acceptance, Edge Cases, Test Scenarios
 
-**Status:** DRAFT — awaiting Architect review.  
-**Sources:** [00-business-rules.md](00-business-rules.md), [10-failure-scenarios.md](10-failure-scenarios.md).
+**Status:** READY FOR ARCHITECT REVIEW  
+**Sources:** [00](00-business-rules.md), [02](02-state-machine.md), [10](10-failure-scenarios.md)
 
 ---
 
-## Acceptance Criteria
+## Mandatory acceptance scenarios (Architect-requested)
+
+These are the **must-pass** Sprint 6.1 scenarios. Each maps to AC / unit / integration / API below.
+
+| ID | Scenario | Expected |
+|----|----------|----------|
+| S01 | **Create payment for pending booking** | Booking `PendingPayment` + active hold → Payment `Pending`; amount = Booking `TotalPrice` |
+| S02 | **Reject payment for expired booking** | Booking `Expired` / hold dead → `409 booking_not_payable`; no Payment created |
+| S03 | **Reject client-supplied amount mismatch** | Body contains amount ≠ snapshot → reject / ignore; stored Amount always = snapshot (L1) |
+| S04 | **Process duplicate webhook once** | Same `EventId` twice → one effect; second `200` no-op (L2) |
+| S05 | **Handle successful payment** | Verified Succeeded → Payment `Succeeded` → Outbox → Booking `Confirmed` (L3) |
+| S06 | **Handle failed payment** | Verified Failed → Payment `Failed`; Booking stays `PendingPayment` until TTL; retry allowed (L10) |
+| S07 | **Handle late success webhook** | Booking already `Expired` → **no Confirm**; auto full refund → Payment `Refunded` (L4) |
+| S08 | **Handle partial refund** | Refund `< remaining` → `PartiallyRefunded`; `RefundedAmount` updated; audited |
+| S09 | **Handle full refund** | Refund brings total to `Amount` → `Refunded`; Outbox → Booking refunded path |
+| S10 | **Reject refund above paid amount** | `amount > Amount − RefundedAmount` → `400 refund_exceeds_remaining` |
+| S11 | **Retry provider timeout safely** | Create/refund timeout → retry **same** idempotency key → no double charge (I2) |
+
+---
+
+## Acceptance Criteria (L1–L10)
 
 | ID | Criterion |
 |----|-----------|
-| AC-01 | Payment `Amount` equals the Booking `TotalPrice` snapshot; client-supplied amount is ignored (L1). |
-| AC-02 | Booking becomes `Confirmed` only after Payment reaches `Succeeded` (L3). |
-| AC-03 | A late `Succeeded` for an `Expired`/terminal Booking does NOT confirm it (L4). |
-| AC-04 | The same webhook is processed exactly once; replays are no-ops (L2). |
-| AC-05 | Webhook signature is verified before any effect; invalid → `401`, no change (L6). |
-| AC-06 | Payment and Booking are separate aggregates linked by id; coordination via Outbox (L7, L9). |
-| AC-07 | Provider payloads never bind into the domain model; adapter normalizes first (L8). |
-| AC-08 | Refund is a separate, audited operation; `RefundedAmount` ≤ `Amount` (L5). |
-| AC-09 | Only one non-terminal Payment per Booking; re-initiate returns existing. |
-| AC-10 | Payment window = Booking Payment TTL (15m); expiry → `Expired`, hold released. |
-| AC-11 | Every status change writes status history; every provider call writes an attempt (audit). |
-| AC-12 | Outbound provider call + refund carry stable idempotency keys (no double charge). |
+| AC-01 | Amount = Booking `TotalPrice` snapshot; client amount not authoritative (L1) |
+| AC-02 | Confirm only after `Succeeded` + active hold (L3) |
+| AC-03 | Late success never confirms terminal Booking (L4) |
+| AC-04 | Duplicate webhook → single effect (L2) |
+| AC-05 | Invalid signature → `401`, no effect (L6) |
+| AC-06 | Separate aggregates; Outbox only (L7, L9) |
+| AC-07 | Provider models stay behind adapter (L8) |
+| AC-08 | Refund separate; partial/full rules; never over-refund (L5) |
+| AC-09 | ≤1 active Payment per Booking |
+| AC-10 | 15m window; Expired releases hold |
+| AC-11 | Failed does not stick Booking forever; TTL + retry (L10) |
+| AC-12 | Audit history on every transition / provider call |
+| AC-13 | Outbound create/refund idempotent under timeout |
 
 ---
 
@@ -28,20 +49,20 @@
 
 | ID | Case | Expected |
 |----|------|----------|
-| E01 | Client amount ≠ Booking total | Booking total used |
-| E02 | Provider captured amount ≠ Payment.Amount | Mismatch → fail/reconcile |
-| E03 | Duplicate webhook | Processed once |
-| E04 | Out-of-order webhooks (Failed→Succeeded) | Guards reject illegal flip |
-| E05 | Webhook before create persisted | Parked/retried, processed once |
-| E06 | Succeeded lands 1s after Expired | No confirm; auto-refund |
-| E07 | Full refund in two partials | `PartiallyRefunded` → `Refunded` |
-| E08 | Over-refund by 0.01 | Rejected |
-| E09 | Refund on `Pending` payment | Rejected |
-| E10 | Second initiate for same booking | Returns existing Payment |
-| E11 | Invalid signature | `401`, no effect |
-| E12 | Provider timeout on create, retried | Same key, one session |
-| E13 | Add new provider | New adapter only; no domain change |
-| E14 | Booking cancelled → refund instruction | Refund executed + `BookingRefunded` |
+| E01 | Client amount ≠ snapshot | Snapshot wins / request rejected |
+| E02 | Provider captured ≠ Payment.Amount | Mismatch fail/reconcile |
+| E03 | Duplicate webhook | Once |
+| E04 | Failed then Succeeded out of order | Illegal flip rejected |
+| E05 | Webhook before create persisted | Park/retry once |
+| E06 | Succeeded 1s after Booking Expired | No confirm; auto-refund |
+| E07 | Two partials → full | `PartiallyRefunded` → `Refunded` |
+| E08 | Over-refund 0.01 | Reject |
+| E09 | Refund while `Pending` | Reject |
+| E10 | Concurrent initiate | One Payment |
+| E11 | Bad signature | `401` |
+| E12 | Provider create timeout | Same key, one session |
+| E13 | New provider | Adapter only |
+| E14 | Failed then retry while hold live | Second Payment allowed after terminal Failed |
 
 ---
 
@@ -49,43 +70,46 @@
 
 ### Unit
 
-| T | Scenario |
-|---|----------|
-| U01 | `Payment.Create` copies amount from Booking snapshot; ignores input amount |
-| U02 | Illegal transitions rejected (`Expired`→`Succeeded`, refund from `Pending`) |
-| U03 | `MarkSucceeded` with amount ≠ `Amount` → mismatch failure |
-| U04 | `AddRefund` guards: `> 0`, `≤ remaining`, correct status derivation |
-| U05 | Status history + attempt appended on every transition |
-| U06 | `Version` increments on mutation |
+| T | Maps to | Scenario |
+|---|---------|----------|
+| U01 | S01,S03 | Create copies snapshot; rejects bad amount |
+| U02 | S02 | Create rejected when Booking not payable |
+| U03 | — | Illegal transitions (`Expired`→`Succeeded`) |
+| U04 | S08,S09,S10 | Refund guards + status derivation |
+| U05 | S06 | Failed leaves Booking TTL path open |
+| U06 | — | Version + history on mutation |
 
 ### Integration
 
-| T | Scenario |
-|---|----------|
-| I01 | Approve → create Payment → webhook Succeeded → BookingConfirmed |
-| I02 | Duplicate webhook → single confirm (inbox unique key) |
-| I03 | 15m expiry → Payment Expired + Booking Expired |
-| I04 | Late Succeeded after Expired → no confirm → auto-refund |
-| I05 | Signature invalid → `401`, no state change |
-| I06 | Crash between verify and commit → reprocessed once |
-| I07 | Refund partial then full → `Refunded` + `BookingRefunded` |
-| I08 | Concurrent initiate → one Payment |
-| I09 | F-PAY-06…11, F-PAY-12…16, F-PAY-20…25 |
+| T | Maps to | Scenario |
+|---|---------|----------|
+| I01 | S01,S05 | Approve → pay → webhook → Confirm |
+| I02 | S04 | Duplicate webhook → one Confirm |
+| I03 | S02 | Expired booking → cannot initiate |
+| I04 | S07 | Late Succeeded → no Confirm → auto-refund |
+| I05 | S06 | Failed webhook → Failed Payment; Booking still PendingPayment |
+| I06 | S08,S09 | Partial then full refund |
+| I07 | S10 | Over-refund rejected |
+| I08 | S11 | Provider timeout retry same key |
+| I09 | — | Invalid signature → no state |
+| I10 | — | Concurrent initiate → one row |
 
 ### API
 
-| T | Scenario |
-|---|----------|
-| A01 | `POST /payments` missing `Idempotency-Key` → `400` |
-| A02 | `POST /payments` with amount in body → amount ignored, booking total used |
-| A03 | `POST /payments/webhook/{provider}` bad signature → `401` |
-| A04 | `POST /payments/{id}/refund` exceeding remaining → `400` |
-| A05 | `GET /payments/{id}` returns normalized `failureReason` + status history |
+| T | Maps to | Scenario |
+|---|---------|----------|
+| A01 | S01 | `POST /payments` happy path |
+| A02 | S03 | Amount in body rejected/ignored |
+| A03 | S02 | Expired booking → 409 |
+| A04 | S04 | Webhook duplicate → 200 no-op |
+| A05 | S05/S06 | Webhook success/fail |
+| A06 | S08–S10 | Refund endpoints |
+| A07 | — | Missing Idempotency-Key → 400 |
 
 ---
 
 ## Sign-off
 
-- [ ] AC covers all 9 locked principles (L1–L9)
-- [ ] Edges + failure matrix mapped to tests
-- [ ] Test list approved for Sprint 6.1
+- [ ] S01–S11 accepted as 6.1 gate
+- [ ] AC covers L1–L10
+- [ ] Partial vs full + late auto-refund covered

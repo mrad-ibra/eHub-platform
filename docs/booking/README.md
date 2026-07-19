@@ -3,7 +3,7 @@
 **Sprint 5.0–5.2:** **APPROVED** — Booking Core **COMPLETED**  
 See [14-sprint-52-final-disposition.md](14-sprint-52-final-disposition.md)
 
-**Next epic:** [Payment Architecture Pack](../payment/README.md) (Sprint 6.0 DRAFT)
+**Next epic:** [Payment Architecture Pack](../payment/README.md) — Sprint 6.0 **READY FOR ARCHITECT REVIEW**
 
 ### Locked decisions (Booking)
 

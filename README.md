@@ -79,7 +79,7 @@ Migrations are **not** applied inside `Program.cs` (deploy/ops owns schema chang
 | Phase | Focus | Status |
 | --- | --- | --- |
 | **Done** | Sprint 5.2 — Booking Core (EF, EXCLUDE, expire worker, CI) | **APPROVED / COMPLETED** |
-| **Now** | Sprint 6.0 — Payment Architecture Pack | **DRAFT** → Architect review |
+| **Now** | Sprint 6.0 — Payment Architecture Pack | **READY FOR ARCHITECT REVIEW** |
 | **Next** | Sprint 6.1 — Payment implementation | After 6.0 APPROVED |
 | **Soon** | Notification / Outbox consumer | Planned |
 | **Later** | Redis caching, Search, richer OTel dashboards | Planned |
