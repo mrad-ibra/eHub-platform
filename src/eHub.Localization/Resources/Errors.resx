@@ -258,4 +258,16 @@
   <data name="PaymentRefundReasonTooLong" xml:space="preserve">
     <value>Refund reason is too long.</value>
   </data>
+  <data name="PaymentAccessDenied" xml:space="preserve">
+    <value>You do not have access to create a payment for this booking.</value>
+  </data>
+  <data name="PaymentBookingNotPayable" xml:space="preserve">
+    <value>Booking is not awaiting payment.</value>
+  </data>
+  <data name="PaymentActiveAlreadyExists" xml:space="preserve">
+    <value>An active payment already exists for this booking.</value>
+  </data>
+  <data name="PaymentIdempotencyPayloadMismatch" xml:space="preserve">
+    <value>Idempotency-Key was reused with a different booking.</value>
+  </data>
 </root>

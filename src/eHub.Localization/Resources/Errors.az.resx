@@ -258,4 +258,16 @@
   <data name="PaymentRefundReasonTooLong" xml:space="preserve">
     <value>Geri ödəniş səbəbi çox uzundur.</value>
   </data>
+  <data name="PaymentAccessDenied" xml:space="preserve">
+    <value>Bu bron üçün ödəniş yaratmaq icazəniz yoxdur.</value>
+  </data>
+  <data name="PaymentBookingNotPayable" xml:space="preserve">
+    <value>Bron ödəniş gözləmir.</value>
+  </data>
+  <data name="PaymentActiveAlreadyExists" xml:space="preserve">
+    <value>Bu bron üçün artıq aktiv ödəniş var.</value>
+  </data>
+  <data name="PaymentIdempotencyPayloadMismatch" xml:space="preserve">
+    <value>Idempotency-Key fərqli bron ilə təkrar istifadə olunub.</value>
+  </data>
 </root>

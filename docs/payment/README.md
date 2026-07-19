@@ -1,7 +1,8 @@
 # EPIC 6 — Payment
 
 **Sprint 6.0:** Payment Architecture Pack — **APPROVED** (2026-07-20)  
-**Sprint 6.1:** Payment Implementation — **IN PROGRESS** (Phase 1 Domain)
+**Sprint 6.1 Phase 1:** Domain — **APPROVED**  
+**Sprint 6.1 Phase 2:** Application + Persistence — **IN PROGRESS** ([13](13-sprint-61-phase2.md))
 
 See [12-sprint-60-approved-61-phase1.md](12-sprint-60-approved-61-phase1.md).
 
@@ -11,7 +12,8 @@ See [12-sprint-60-approved-61-phase1.md](12-sprint-60-approved-61-phase1.md).
 |---|----------|---------|
 | — | [README.md](README.md) | Index + locked principles |
 | 00–11 | Architecture pack | Rules, aggregate, SM, webhook, refund, API, AC |
-| 12 | [12-sprint-60-approved-61-phase1.md](12-sprint-60-approved-61-phase1.md) | Approval + 6.1 Phase 1 |
+| 12 | [12-sprint-60-approved-61-phase1.md](12-sprint-60-approved-61-phase1.md) | 6.0 approval + Phase 1 |
+| 13 | [13-sprint-61-phase2.md](13-sprint-61-phase2.md) | Phase 2 Application/Persistence |
 
 ## Locked principles (non-negotiable for 6.1)
 

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using eHub.Persistence;
@@ -11,9 +12,11 @@ using eHub.Persistence;
 namespace eHub.Persistence.Migrations
 {
     [DbContext(typeof(EHubDbContext))]
-    partial class EHubDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260719204523_AddPaymentPersistence")]
+    partial class AddPaymentPersistence
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

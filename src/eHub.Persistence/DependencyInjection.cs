@@ -1,6 +1,7 @@
 using eHub.Application.Bookings.Abstractions;
 using eHub.Application.Common.Persistence;
 using eHub.Application.Configuration;
+using eHub.Application.Payments.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<IBookingRepository, Repositories.EfBookingRepository>();
         services.AddScoped<IBookingIdempotencyStore, Repositories.EfBookingIdempotencyStore>();
         services.AddScoped<IBookingNumberGenerator, Repositories.EfBookingNumberGenerator>();
+        services.AddScoped<IPaymentRepository, Repositories.EfPaymentRepository>();
         services.AddScoped<IOutboxWriter, EfOutboxWriter>();
 
         return services;

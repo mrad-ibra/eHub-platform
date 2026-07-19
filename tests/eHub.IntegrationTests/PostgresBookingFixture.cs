@@ -168,6 +168,8 @@ public sealed class PostgresBookingFixture : IAsyncLifetime
 
         services.AddScoped<EfBookingNumberGenerator>();
 
+        services.AddScoped<EfPaymentRepository>();
+
         services.AddScoped<EfOutboxWriter>();
 
         return services.BuildServiceProvider();

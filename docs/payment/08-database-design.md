@@ -1,7 +1,7 @@
 # EHUB-608 — Database Design
 
-**Status:** READY FOR ARCHITECT REVIEW  
-Logical model for Sprint 6.x. **No migrations this sprint.**
+**Status:** APPROVED (logical model) · Migration delivered in Sprint 6.1 Phase 2 (`AddPaymentPersistence`)  
+Logical model for Sprint 6.x. **PaymentInbox** deferred to Phase 3 (webhook).
 
 ## ER overview
 

@@ -7,6 +7,7 @@ using eHub.Application.Common.Persistence;
 using eHub.Application.Common.Time;
 using eHub.Application.Configuration;
 using eHub.Application.Identity.Abstractions;
+using eHub.Application.Payments.Abstractions;
 using eHub.Infrastructure.Catalog;
 using eHub.Infrastructure.Email;
 using eHub.Infrastructure.Identity;
@@ -52,6 +53,7 @@ public static class DependencyInjection
             services.AddSingleton<IBookingRepository, InMemoryBookingRepository>();
             services.AddSingleton<IBookingNumberGenerator, InMemoryBookingNumberGenerator>();
             services.AddSingleton<IBookingIdempotencyStore, InMemoryBookingIdempotencyStore>();
+            services.AddSingleton<IPaymentRepository, InMemoryPaymentRepository>();
             services.AddSingleton<IUnitOfWork, InMemoryUnitOfWork>();
             services.AddSingleton<IOutboxWriter, NullOutboxWriter>();
         }

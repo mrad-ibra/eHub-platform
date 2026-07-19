@@ -1,9 +1,9 @@
 # Sprint 6.0 — Final disposition (Payment Architecture Pack)
 
-**Status:** Sprint 6.0 — **APPROVED**  
+**Status:** Sprint 6.1 Phase 1 — **APPROVED**  
 **Date:** 2026-07-20  
 
-Architect approved the Payment Architecture Pack. Implementation may proceed as **Sprint 6.1**.
+Architect approved Domain Phase 1. Phase 2 (Application + Persistence) follows — see [13-sprint-61-phase2.md](13-sprint-61-phase2.md).
 
 ## Locked principles (L1–L10)
 
