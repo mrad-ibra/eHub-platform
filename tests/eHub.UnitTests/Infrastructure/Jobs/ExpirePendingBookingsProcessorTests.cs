@@ -48,6 +48,7 @@ public sealed class ExpirePendingBookingsProcessorTests
             outbox,
             notifier,
             metrics,
+            Substitute.For<IBookingMetrics>(),
             uow,
             clock,
             Options.Create(new JobsOptions

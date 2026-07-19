@@ -1,7 +1,7 @@
 # Sprint 5.2B — Expire Worker + correctness follow-ups
 
-**Status:** APPROVED WITH MINOR COMMENTS (Architect)  
-**Production readiness:** improving — see [17](17-sprint-52b-approval.md)  
+**Status:** APPROVED (Architect)  
+See [18](18-sprint-52b-final-approval.md).  
 
 ## Scope (architect-required trio)
 

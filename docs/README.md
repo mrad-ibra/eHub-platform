@@ -10,15 +10,18 @@
 | [sequences.md](sequences.md) | Key flow diagrams |
 | [threat-model.md](threat-model.md) | Security threats & mitigations |
 | [performance-budget.md](performance-budget.md) | Latency & cache targets |
-| [booking/](booking/README.md) | **Sprint 5.0 gate** — Booking Domain Design pack (EHUB-500…510) |
+| [booking/](booking/README.md) | **Sprint 5.2 COMPLETED** — Booking Core |
+| [payment/](payment/README.md) | **Sprint 6.0 DRAFT** — Payment Architecture Pack |
+| [observability.md](observability.md) | OTel, metrics, correlation, health |
 | [booking-technical-design.md](booking-technical-design.md) | Pointer → `booking/` (legacy path) |
 | [adr/](adr/README.md) | Architecture Decision Records |
 
 ## Sprint discipline
 
-**Design-first development:** for Booking (and later critical modules), lock Business Rules, Domain Model, State Machine, Sequences, ER, API Contract, Acceptance Criteria, Edge Cases, Failure Scenarios, and Test Scenarios — **then** code.
+**Design-first development:** lock Business Rules, Domain Model, State Machine, Sequences, ER, API Contract, Acceptance Criteria, Edge Cases, Failure Scenarios, and Test Scenarios — **then** code.
 
-**Sprint 5.0** = design only — **APPROVED WITH MINOR CHANGES**.  
-**Sprint 5.1** = implementation — **green light** (see [booking/](booking/README.md)).
+**Sprint 5.2** = Booking Core — **APPROVED / COMPLETED** ([disposition](booking/14-sprint-52-final-disposition.md)).  
+**Sprint 6.0** = Payment design only — **DRAFT** awaiting Architect ([payment/](payment/README.md)).  
+**Sprint 6.1** = Payment implementation — only after 6.0 APPROVED.
 
 Especially for **Booking** (transactions, concurrency, availability) and **Payment** (separate aggregate).

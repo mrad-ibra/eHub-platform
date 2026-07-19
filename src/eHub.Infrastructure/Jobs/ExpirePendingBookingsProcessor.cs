@@ -17,6 +17,7 @@ public sealed class ExpirePendingBookingsProcessor(
     IOutboxWriter outbox,
     IBookingExpiryNotifier notifier,
     IExpireBookingsMetrics metrics,
+    IBookingMetrics bookingMetrics,
     IUnitOfWork unitOfWork,
     IClock clock,
     IOptions<JobsOptions> options,
@@ -76,6 +77,8 @@ public sealed class ExpirePendingBookingsProcessor(
 
         var duration = clock.UtcNow - started;
         metrics.RecordBatch(expired, skipped, duration);
+        bookingMetrics.BookingExpired(expired);
+        bookingMetrics.ExpireWorkerDuration(duration);
 
         if (expired > 0)
         {

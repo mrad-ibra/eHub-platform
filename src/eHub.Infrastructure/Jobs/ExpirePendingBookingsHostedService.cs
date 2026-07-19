@@ -1,3 +1,4 @@
+using eHub.Application.Bookings.Abstractions;
 using eHub.Application.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -45,6 +46,16 @@ public sealed class ExpirePendingBookingsHostedService(
             catch (Exception ex)
             {
                 logger.LogError(ex, "ExpirePendingBookings tick failed; backing off {RetryDelay}", retryDelay);
+                try
+                {
+                    using var scope = scopeFactory.CreateScope();
+                    scope.ServiceProvider.GetRequiredService<IBookingMetrics>().ExpireWorkerFailed();
+                }
+                catch
+                {
+                    // metrics must not break backoff
+                }
+
                 try
                 {
                     await Task.Delay(retryDelay, stoppingToken);

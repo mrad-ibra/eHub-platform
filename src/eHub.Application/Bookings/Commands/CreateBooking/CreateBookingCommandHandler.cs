@@ -49,7 +49,8 @@ public sealed class CreateBookingCommandHandler(
     IModelRepository models,
     BookingAvailabilityService availability,
     IClock clock,
-    IUnitOfWork unitOfWork) : ICommandHandler<CreateBookingCommand, CreateBookingResult>
+    IUnitOfWork unitOfWork,
+    IBookingMetrics metrics) : ICommandHandler<CreateBookingCommand, CreateBookingResult>
 {
     public async Task<CreateBookingResult> Handle(
         CreateBookingCommand request,
@@ -77,8 +78,10 @@ public sealed class CreateBookingCommandHandler(
                 return Map(existing);
             }
             case IdempotencyBeginResult.PayloadMismatch:
+                metrics.IdempotencyConflict();
                 throw new ConflictException(ErrorResources.Get(ErrorCodes.BookingIdempotencyPayloadMismatch));
             case IdempotencyBeginResult.InProgress:
+                metrics.IdempotencyConflict();
                 throw new ConflictException(ErrorResources.Get(ErrorCodes.BookingRequestInProgress));
             case IdempotencyBeginResult.Began:
                 break;
@@ -101,7 +104,15 @@ public sealed class CreateBookingCommandHandler(
             var terms = BuildTerms(asset, bufferDays);
 
             var blocking = await bookings.ListBlockingByAssetAsync(asset.Id, now, cancellationToken);
-            availability.EnsureCanBook(asset, period, bufferDays, blocking, now);
+            try
+            {
+                availability.EnsureCanBook(asset, period, bufferDays, blocking, now);
+            }
+            catch (ConflictException)
+            {
+                metrics.BookingConflict();
+                throw;
+            }
 
             var unitPrice = Money.Create(asset.Pricing.Amount, asset.Pricing.CurrencyId);
             var snapshot = await BuildSnapshotAsync(asset, now, cancellationToken);
@@ -136,11 +147,19 @@ public sealed class CreateBookingCommandHandler(
                 delivery,
                 request.Notes);
 
-            // Single critical section: conflict check + insert (InMemory asset lock).
-            await bookings.AddAsync(booking, now, cancellationToken);
-            await idempotency.CompleteAsync(renterId, key, booking.Id, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await bookings.AddAsync(booking, now, cancellationToken);
+                await idempotency.CompleteAsync(renterId, key, booking.Id, cancellationToken);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            catch (ConflictException)
+            {
+                metrics.BookingConflict();
+                throw;
+            }
 
+            metrics.BookingCreated();
             return Map(booking);
         }
         catch

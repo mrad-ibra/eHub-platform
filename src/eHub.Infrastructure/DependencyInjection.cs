@@ -46,8 +46,6 @@ public static class DependencyInjection
         if (eHub.Persistence.DependencyInjection.IsEfPersistenceEnabled(configuration))
         {
             services.AddPersistence(configuration);
-            services.AddScoped<ExpirePendingBookingsProcessor>();
-            services.AddHostedService<ExpirePendingBookingsHostedService>();
         }
         else
         {
@@ -56,9 +54,11 @@ public static class DependencyInjection
             services.AddSingleton<IBookingIdempotencyStore, InMemoryBookingIdempotencyStore>();
             services.AddSingleton<IUnitOfWork, InMemoryUnitOfWork>();
             services.AddSingleton<IOutboxWriter, NullOutboxWriter>();
-            services.AddScoped<ExpirePendingBookingsProcessor>();
-            services.AddHostedService<ExpirePendingBookingsHostedService>();
         }
+
+        // Single registration (EF and in-memory paths share the same worker).
+        services.AddScoped<ExpirePendingBookingsProcessor>();
+        services.AddHostedService<ExpirePendingBookingsHostedService>();
 
         return services;
     }

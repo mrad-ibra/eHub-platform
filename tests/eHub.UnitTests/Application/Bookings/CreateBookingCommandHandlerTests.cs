@@ -34,6 +34,7 @@ public sealed class CreateBookingCommandHandlerTests
     private readonly IModelRepository _models = Substitute.For<IModelRepository>();
     private readonly IClock _clock = Substitute.For<IClock>();
     private readonly IUnitOfWork _uow = Substitute.For<IUnitOfWork>();
+    private readonly IBookingMetrics _metrics = Substitute.For<IBookingMetrics>();
     private readonly CreateBookingCommandHandler _handler;
 
     public CreateBookingCommandHandlerTests()
@@ -70,7 +71,8 @@ public sealed class CreateBookingCommandHandlerTests
             _models,
             new BookingAvailabilityService(),
             _clock,
-            _uow);
+            _uow,
+            _metrics);
     }
 
     [Fact]

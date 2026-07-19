@@ -8,8 +8,8 @@ Unified marketplace for listing and renting physical assets (vehicles, watercraf
 
 | Layer | Technology |
 | --- | --- |
-| Backend | ASP.NET Core 9, C#, MediatR (CQRS), FluentValidation, Serilog |
-| Data (planned) | PostgreSQL, EF Core, Redis |
+| Backend | ASP.NET Core 9, C#, MediatR (CQRS), FluentValidation, Serilog, OpenTelemetry |
+| Data | PostgreSQL, EF Core, Redis |
 | Realtime (planned) | SignalR |
 | Frontend | Next.js, Tailwind CSS |
 | Mobile | Flutter (later) |
@@ -26,56 +26,70 @@ src/
   eHub.Persistence
   eHub.SharedKernel
   eHub.Contracts        # reserved (empty) — feature DTOs live in Application
-docs/                   # architecture, ADR, ERD, API, BRS, C4, …
+docs/                   # architecture, ADR, Booking, Payment, …
 ```
 
 ## Getting started
 
-```bash
-# Infra only (Postgres + Redis + pgAdmin) — API is not in compose
-docker compose -f docker-compose.dev.yml up -d
+### Option A — host API (recommended for day-to-day)
 
-# Apply EF migrations (not run automatically on API startup)
+```bash
+docker compose -f docker-compose.dev.yml up -d postgres redis pgadmin
+
 dotnet ef database update \
   --project src/eHub.Persistence \
   --startup-project src/eHub.Api
 
-dotnet restore
-dotnet build
-dotnet test
 dotnet run --project src/eHub.Api
 ```
 
-Swagger is available in Development. See [docs/api.md](docs/api.md).
+API: `http://localhost:5xxx` (see launchSettings). Health: `/health`, metrics: `/metrics`.
 
-### Ops: database & Docker
+### Option B — full stack in Docker
+
+```bash
+# First time: ensure migrations applied to the compose Postgres volume
+docker compose -f docker-compose.dev.yml up -d postgres
+dotnet ef database update \
+  --project src/eHub.Persistence \
+  --startup-project src/eHub.Api
+
+docker compose -f docker-compose.dev.yml up --build
+```
+
+API container listens on **http://localhost:8080**.
+
+Migrations are **not** applied inside `Program.cs` (deploy/ops owns schema changes).
+
+### Ops notes
 
 | Topic | Decision |
 | --- | --- |
-| **Migrations** | Applied by **deploy/ops** (`dotnet ef database update` or a migration job). API **does not** call `Database.Migrate()` on startup (safer for multi-instance). |
-| **Docker Compose** | Raises **PostgreSQL, Redis, pgAdmin** only. API runs on the host via `dotnet run` until an API image is added to compose. |
-| **Connection** | `ConnectionStrings:DefaultConnection` (see `appsettings.Development.json` / env). Empty → in-memory Booking path. |
+| **Migrations** | `dotnet ef database update` or a pipeline job — never auto on multi-instance startup |
+| **Compose** | Postgres + Redis + pgAdmin + **API** (`docker-compose.dev.yml`) |
+| **Connection** | `ConnectionStrings:DefaultConnection`. Empty → in-memory Booking path |
+| **Observability** | OTel traces/metrics, `X-Correlation-Id`, Prometheus `/metrics`, Serilog |
 
-### Expire worker (already configurable)
+### Booking metrics
 
-`Jobs:ExpirePendingBookings` in `appsettings.json`: `Enabled`, `IntervalSeconds`, `BatchSize`, `RetryDelaySeconds`. Metrics: expired/skipped counts + duration (logging stub). On shutdown, the current batch stops accepting new rows and commits what was already prepared.
+`booking_created_total` · `booking_conflict_total` · `booking_expired_total` · `idempotency_conflict_total` · `expire_worker_duration` · `expire_worker_failed_total`
 
 ## Roadmap
 
 | Phase | Focus | Status |
 | --- | --- | --- |
-| **Done** | Sprint 5.2B — Expire Worker, outbox table, CI PG gate | **APPROVED WITH MINOR COMMENTS** |
-| **Next** | Notification / Outbox processing | Planned |
-| **Soon** | Payment module | Planned |
-| **Later** | Observability (OTel), Redis caching, Search | Planned |
-| **Ops** | API container in compose; migrate job in pipeline | Planned |
+| **Done** | Sprint 5.2 — Booking Core (EF, EXCLUDE, expire worker, CI) | **APPROVED / COMPLETED** |
+| **Now** | Sprint 6.0 — Payment Architecture Pack | **DRAFT** → Architect review |
+| **Next** | Sprint 6.1 — Payment implementation | After 6.0 APPROVED |
+| **Soon** | Notification / Outbox consumer | Planned |
+| **Later** | Redis caching, Search, richer OTel dashboards | Planned |
 
 ### Future modules (must stay separate)
 
-- **Booking** — own aggregate (availability, race conditions, distributed lock / concurrency)
-- **Payment** — own aggregate/module (never inside Asset)
-- **Notification** — email/SMS/push via domain events + outbox
-- **GPS / Chat / Search** — own modules
+- **Booking** — COMPLETED core  
+- **Payment** — design pack in [docs/payment](docs/payment)  
+- **Notification** — email/SMS/push via domain events + outbox  
+- **GPS / Chat / Search** — own modules  
 
 ## Development rules
 

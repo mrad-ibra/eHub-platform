@@ -15,6 +15,7 @@ try
     var builder = WebApplication.CreateBuilder(args);
 
     builder.AddEHubSerilog();
+    builder.AddEHubObservability();
     builder.Services.AddApplication(builder.Configuration);
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddEHubProblemDetails();
@@ -29,6 +30,7 @@ try
 
     var app = builder.Build();
 
+    app.UseEHubObservability();
     app.UseGlobalExceptionMiddleware();
     app.UseEHubSerilog();
 

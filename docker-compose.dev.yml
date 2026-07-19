@@ -48,6 +48,30 @@ services:
       timeout: 5s
       retries: 10
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ehub-api-dev
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-ehub};Username=${POSTGRES_USER:-ehub};Password=${POSTGRES_PASSWORD:-ehub}
+      ConnectionStrings__Redis: redis:6379
+      Auth__Jwt__Key: ${JWT_KEY:-ehub-dev-only-symmetric-key-change-in-prod-32chars}
+      Auth__Seed__Enabled: "true"
+      Auth__Seed__Email: ${SEED_EMAIL:-admin@ehub.local}
+      Auth__Seed__Password: ${SEED_PASSWORD:-ChangeMe123!}
+      Jobs__ExpirePendingBookings__Enabled: "true"
+      Jobs__ExpirePendingBookings__IntervalSeconds: "60"
+    ports:
+      - "${API_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   ehub_postgres_data_dev:
   ehub_pgadmin_data_dev:
