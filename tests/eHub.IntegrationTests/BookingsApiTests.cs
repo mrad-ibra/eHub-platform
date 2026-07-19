@@ -11,7 +11,11 @@ public sealed class BookingsApiTests : IClassFixture<WebApplicationFactory<Progr
 
     public BookingsApiTests(WebApplicationFactory<Program> factory)
     {
-        _factory = factory.WithWebHostBuilder(_ => { });
+        // Keep smoke tests on InMemory booking adapters (no Postgres required).
+        _factory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("ConnectionStrings:DefaultConnection", "");
+        });
     }
 
     [Fact]

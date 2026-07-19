@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\eHub.Api\eHub.Api.csproj" />
+    <ProjectReference Include="..\..\src\eHub.Persistence\eHub.Persistence.csproj" />
   </ItemGroup>
 
 </Project>

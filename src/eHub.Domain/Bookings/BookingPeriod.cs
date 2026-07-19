@@ -9,6 +9,12 @@ public sealed class BookingPeriod : IEquatable<BookingPeriod>
     public DateOnly StartDate { get; }
     public DateOnly EndDate { get; }
 
+    private BookingPeriod()
+    {
+        StartDate = default;
+        EndDate = default;
+    }
+
     private BookingPeriod(DateOnly startDate, DateOnly endDate)
     {
         StartDate = startDate;

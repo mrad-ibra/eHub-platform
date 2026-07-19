@@ -1,8 +1,17 @@
 # EPIC 5 — Booking Engine
 
-**Sprint 5.0:** CLOSED — Architecture **APPROVED** (2026-07-19)  
-**Sprint 5.1:** **CHANGES REQUIRED** → P0 remediation applied (see [12-sprint-51-review.md](12-sprint-51-review.md)). Re-review pending.  
-Domain model remains strong; production readiness still gated on EF + expire worker + deeper integration tests.
+**Sprint 5.0:** CLOSED — Architecture **APPROVED**  
+**Sprint 5.1:** In-memory + P0 — **APPROVED**  
+**Sprint 5.2A:** EF Persistence Foundation — **IN PROGRESS** ([13-sprint-52a-ef-persistence.md](13-sprint-52a-ef-persistence.md))  
+**Sprint 5.2B:** Expire Worker — after 5.2A  
+**Production readiness:** NOT APPROVED  
+
+### Applied after re-review
+
+- `BookingDefaults.IdempotencyProcessingTtl` = **5 minutes** (separate from Soft Hold / Payment TTL)  
+- EF: `CompleteAsync` does not flush; booking + idempotency complete share `SaveChangesAsync`  
+- `EHubDbContext`, Booking mappings, idempotency table, sequence, exclusion constraint migration  
+- Connection string present → EF Booking adapters; empty → InMemory (Sprint 5.1 path)
 
 ### Architect review focus (going forward)
 

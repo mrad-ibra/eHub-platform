@@ -43,8 +43,8 @@ public sealed class Booking : AggregateRoot
     /// </summary>
     public int AggregateVersion { get; private set; }
 
-    public IReadOnlyCollection<BookingTimelineEntry> Timeline => _timeline.AsReadOnly();
-    public IReadOnlyCollection<BookingStatusHistoryEntry> StatusHistory => _statusHistory.AsReadOnly();
+    public IReadOnlyCollection<BookingTimelineEntry> Timeline => _timeline;
+    public IReadOnlyCollection<BookingStatusHistoryEntry> StatusHistory => _statusHistory;
 
     public DateOnly OccupiedEnd => Period.OccupiedEnd(BufferDays);
 

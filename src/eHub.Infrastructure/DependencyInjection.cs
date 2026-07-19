@@ -11,13 +11,17 @@ using eHub.Infrastructure.Email;
 using eHub.Infrastructure.Identity;
 using eHub.Infrastructure.Persistence;
 using eHub.Infrastructure.Time;
+using eHub.Persistence;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace eHub.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
@@ -28,14 +32,22 @@ public static class DependencyInjection
         services.AddSingleton<IRefreshTokenRepository, InMemoryRefreshTokenRepository>();
         services.AddSingleton<ILoginHistoryRepository, InMemoryLoginHistoryRepository>();
         services.AddSingleton<IAssetRepository, InMemoryAssetRepository>();
-        services.AddSingleton<IBookingRepository, InMemoryBookingRepository>();
-        services.AddSingleton<IBookingNumberGenerator, InMemoryBookingNumberGenerator>();
-        services.AddSingleton<IBookingIdempotencyStore, InMemoryBookingIdempotencyStore>();
         services.AddSingleton<BookingAvailabilityService>();
-        services.AddSingleton<IUnitOfWork, InMemoryUnitOfWork>();
         AddCatalogRepositories(services);
         services.AddHostedService<AuthSeedHostedService>();
         services.AddHostedService<CatalogSeedHostedService>();
+
+        if (eHub.Persistence.DependencyInjection.IsEfPersistenceEnabled(configuration))
+        {
+            services.AddPersistence(configuration);
+        }
+        else
+        {
+            services.AddSingleton<IBookingRepository, InMemoryBookingRepository>();
+            services.AddSingleton<IBookingNumberGenerator, InMemoryBookingNumberGenerator>();
+            services.AddSingleton<IBookingIdempotencyStore, InMemoryBookingIdempotencyStore>();
+            services.AddSingleton<IUnitOfWork, InMemoryUnitOfWork>();
+        }
 
         return services;
     }

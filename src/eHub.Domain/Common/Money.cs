@@ -9,6 +9,10 @@ public sealed class Money : IEquatable<Money>
     public decimal Amount { get; }
     public Guid CurrencyId { get; }
 
+    private Money()
+    {
+    }
+
     private Money(decimal amount, Guid currencyId)
     {
         Amount = amount;

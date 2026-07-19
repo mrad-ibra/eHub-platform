@@ -65,7 +65,7 @@ public sealed class CreateBookingCommandHandler(
             key,
             requestHash,
             now,
-            BookingDefaults.OwnerApprovalTtl,
+            BookingDefaults.IdempotencyProcessingTtl,
             cancellationToken);
 
         switch (begin)
