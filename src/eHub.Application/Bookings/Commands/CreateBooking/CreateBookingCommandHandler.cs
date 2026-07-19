@@ -100,7 +100,8 @@ public sealed class CreateBookingCommandHandler(
             }
 
             var period = BookingPeriod.Create(request.StartDate, request.EndDate);
-            var bufferDays = BookingDefaults.DefaultPreparationBufferDays;
+            var bufferDays = asset.RentalRules?.PreparationBufferDays
+                ?? BookingDefaults.DefaultPreparationBufferDays;
             var terms = BuildTerms(asset, bufferDays);
 
             var blocking = await bookings.ListBlockingByAssetAsync(asset.Id, now, cancellationToken);

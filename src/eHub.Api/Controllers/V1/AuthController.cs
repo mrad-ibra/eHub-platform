@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using eHub.Application.Configuration;
 using eHub.Application.Identity.Commands.ConfirmEmail;
 using eHub.Application.Identity.Commands.ForgotPassword;
 using eHub.Application.Identity.Commands.Login;
@@ -13,6 +14,7 @@ using eHub.Application.Identity.Queries.GetUserSessions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace eHub.Api.Controllers.V1;
 
@@ -22,9 +24,11 @@ namespace eHub.Api.Controllers.V1;
 public sealed class AuthController(ISender sender) : ControllerBase
 {
     [HttpPost("login")]
+    [EnableRateLimiting(AuthRateLimitOptions.PolicyName)]
     [MapToApiVersion(1.0)]
     [ProducesResponseType(typeof(AuthSessionResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<AuthSessionResult>> Login(
         [FromBody] LoginRequest request,
         CancellationToken cancellationToken)
@@ -112,10 +116,12 @@ public sealed class AuthController(ISender sender) : ControllerBase
     }
 
     [HttpPost("verify-email")]
+    [EnableRateLimiting(AuthRateLimitOptions.PolicyName)]
     [MapToApiVersion(1.0)]
     [ProducesResponseType(typeof(AuthSessionResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<AuthSessionResult>> VerifyEmail(
         [FromBody] VerifyEmailRequest request,
         CancellationToken cancellationToken)
@@ -128,8 +134,10 @@ public sealed class AuthController(ISender sender) : ControllerBase
     }
 
     [HttpPost("resend-verification")]
+    [EnableRateLimiting(AuthRateLimitOptions.PolicyName)]
     [MapToApiVersion(1.0)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> ResendVerification(
         [FromBody] ResendVerificationRequest request,
         CancellationToken cancellationToken)
@@ -139,8 +147,10 @@ public sealed class AuthController(ISender sender) : ControllerBase
     }
 
     [HttpPost("forgot-password")]
+    [EnableRateLimiting(AuthRateLimitOptions.PolicyName)]
     [MapToApiVersion(1.0)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> ForgotPassword(
         [FromBody] ForgotPasswordRequest request,
         CancellationToken cancellationToken)
@@ -150,10 +160,12 @@ public sealed class AuthController(ISender sender) : ControllerBase
     }
 
     [HttpPost("reset-password")]
+    [EnableRateLimiting(AuthRateLimitOptions.PolicyName)]
     [MapToApiVersion(1.0)]
     [ProducesResponseType(typeof(AuthSessionResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<AuthSessionResult>> ResetPassword(
         [FromBody] ResetPasswordRequest request,
         CancellationToken cancellationToken)

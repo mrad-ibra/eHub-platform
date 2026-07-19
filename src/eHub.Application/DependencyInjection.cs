@@ -25,6 +25,8 @@ public static class DependencyInjection
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
         services.Configure<SiteOptions>(configuration.GetSection(SiteOptions.SectionName));
         services.Configure<CatalogOptions>(configuration.GetSection(CatalogOptions.SectionName));
+        services.Configure<CorsOptions>(configuration.GetSection(CorsOptions.SectionName));
+        services.Configure<RateLimitingOptions>(configuration.GetSection(RateLimitingOptions.SectionName));
 
         services.AddSingleton<IAuthorizationCatalog, AuthorizationCatalog>();
         services.AddScoped<IAuthSessionFactory, AuthSessionFactory>();

@@ -78,14 +78,13 @@ public sealed class Payment : AggregateRoot
         };
 
         payment.SetCreatedAudit(nowUtc, null);
-        payment.TransitionTo(
+        payment.ApplyTransition(
             PaymentStatusCode.Created,
             nowUtc,
             null,
             "Created",
             "Payment created from booking snapshot.",
             reason: null);
-        payment.AggregateVersion++;
 
         payment.Raise(new PaymentCreated(
             payment.Id,
@@ -118,14 +117,13 @@ public sealed class Payment : AggregateRoot
             providerPaymentId,
             detail: null);
 
-        TransitionTo(
+        ApplyTransition(
             PaymentStatusCode.Pending,
             nowUtc,
             null,
             "Pending",
             "Provider payment session opened.",
             reason: null);
-        AggregateVersion++;
 
         Raise(new PaymentPending(Id, BookingId, ProviderPaymentId, nowUtc));
     }
@@ -141,14 +139,13 @@ public sealed class Payment : AggregateRoot
         EnsureTransitionFrom(PaymentStatusCode.Pending);
 
         RecordAttempt(PaymentAttemptKind.Capture, PaymentAttemptResult.Pending, nowUtc);
-        TransitionTo(
+        ApplyTransition(
             PaymentStatusCode.Authorized,
             nowUtc,
             null,
             "Authorized",
             "Payment authorized (not captured).",
             reason: null);
-        AggregateVersion++;
 
         Raise(new PaymentAuthorized(Id, BookingId, nowUtc));
     }
@@ -180,14 +177,13 @@ public sealed class Payment : AggregateRoot
             paidAtUtc,
             providerPaymentId);
 
-        TransitionTo(
+        ApplyTransition(
             PaymentStatusCode.Succeeded,
             paidAtUtc,
             null,
             "Paid",
             "Payment succeeded — capture confirmed.",
             reason: null);
-        AggregateVersion++;
 
         Raise(new PaymentSucceeded(
             Id,
@@ -216,14 +212,13 @@ public sealed class Payment : AggregateRoot
             nowUtc,
             detail: FailureReason);
 
-        TransitionTo(
+        ApplyTransition(
             PaymentStatusCode.Failed,
             nowUtc,
             null,
             "Failed",
             $"Payment failed: {FailureReason}",
             FailureReason);
-        AggregateVersion++;
 
         Raise(new PaymentFailed(Id, BookingId, FailureReason!, nowUtc));
     }
@@ -243,14 +238,13 @@ public sealed class Payment : AggregateRoot
         ExpiresAtUtc = null;
         RecordAttempt(PaymentAttemptKind.Cancel, PaymentAttemptResult.Succeeded, nowUtc);
 
-        TransitionTo(
+        ApplyTransition(
             PaymentStatusCode.Cancelled,
             nowUtc,
             actorId,
             "Cancelled",
             "Payment cancelled before capture.",
             reason: null);
-        AggregateVersion++;
 
         Raise(new PaymentCancelled(Id, BookingId, nowUtc));
     }
@@ -275,14 +269,13 @@ public sealed class Payment : AggregateRoot
         ExpiresAtUtc = null;
         RecordAttempt(PaymentAttemptKind.Reconcile, PaymentAttemptResult.Failed, nowUtc, detail: "Window elapsed");
 
-        TransitionTo(
+        ApplyTransition(
             PaymentStatusCode.Expired,
             nowUtc,
             null,
             "Expired",
             "Payment window elapsed without success.",
             reason: null);
-        AggregateVersion++;
 
         Raise(new PaymentExpired(Id, BookingId, nowUtc));
     }
@@ -331,7 +324,7 @@ public sealed class Payment : AggregateRoot
 
         if (Status != target)
         {
-            TransitionTo(
+            ApplyTransition(
                 target,
                 nowUtc,
                 actorId,
@@ -349,9 +342,8 @@ public sealed class Payment : AggregateRoot
                 nowUtc,
                 actorId));
             SetUpdatedAudit(nowUtc, actorId);
+            MarkChanged();
         }
-
-        AggregateVersion++;
 
         Raise(new PaymentRefunded(
             Id,
@@ -407,7 +399,7 @@ public sealed class Payment : AggregateRoot
         return trimmed;
     }
 
-    private void TransitionTo(
+    private void ApplyTransition(
         PaymentStatusCode to,
         DateTime nowUtc,
         Guid? actorId,
@@ -420,7 +412,11 @@ public sealed class Payment : AggregateRoot
         _timeline.Add(PaymentTimelineEntry.Create(timelineCode, timelineMessage, nowUtc, actorId));
         Status = to;
         SetUpdatedAudit(nowUtc, actorId);
+        AggregateVersion++;
     }
+
+    /// <summary>Bump concurrency version without a status transition (e.g. further partial refund).</summary>
+    private void MarkChanged() => AggregateVersion++;
 
     private void EnsureTransitionFrom(params PaymentStatusCode[] allowed)
     {

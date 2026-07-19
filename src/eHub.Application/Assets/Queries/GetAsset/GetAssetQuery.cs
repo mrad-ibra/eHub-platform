@@ -52,7 +52,8 @@ public sealed record AssetRentalRulesDto(
     int? MaxRentalDays,
     int? MinDriverAge,
     bool RequiresLicense,
-    string? Notes);
+    string? Notes,
+    int? PreparationBufferDays);
 
 public sealed record AssetSecurityDepositDto(bool Required, decimal? Amount, Guid? CurrencyId);
 

@@ -28,6 +28,8 @@ try
     });
     builder.Services.AddEHubSwagger();
     builder.Services.AddEHubAuth(builder.Configuration);
+    builder.Services.AddEHubCors(builder.Configuration);
+    builder.Services.AddEHubRateLimiting(builder.Configuration);
 
     var app = builder.Build();
 
@@ -41,6 +43,8 @@ try
     }
 
     app.UseHttpsRedirection();
+    app.UseEHubCors();
+    app.UseRateLimiter();
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapEHubHealthChecks();

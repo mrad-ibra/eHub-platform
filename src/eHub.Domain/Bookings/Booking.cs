@@ -127,15 +127,14 @@ public sealed class Booking : AggregateRoot
             Dropoff = dropoff ?? DropoffInformation.UseAsset(),
             Driver = driverOpt,
             Delivery = deliveryOpt,
-            Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
-            AggregateVersion = 1
+            Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim()
         };
 
         booking.SetCreatedAudit(nowUtc, renterId);
 
         if (instantBook)
         {
-            booking.TransitionTo(
+            booking.ApplyTransition(
                 BookingStatusCode.PendingPayment,
                 nowUtc,
                 renterId,
@@ -145,7 +144,7 @@ public sealed class Booking : AggregateRoot
         }
         else
         {
-            booking.TransitionTo(
+            booking.ApplyTransition(
                 BookingStatusCode.PendingOwnerApproval,
                 nowUtc,
                 renterId,
@@ -174,14 +173,13 @@ public sealed class Booking : AggregateRoot
         EnsureStatus(BookingStatusCode.PendingOwnerApproval);
         EnsureHoldActive(nowUtc);
 
-        TransitionTo(
+        ApplyTransition(
             BookingStatusCode.PendingPayment,
             nowUtc,
             hostId,
             "Approved",
             "Owner approved — payment window started.");
         ExpiresAtUtc = nowUtc.Add(BookingDefaults.PaymentTtl);
-        AggregateVersion++;
 
         Raise(new BookingApproved(Id, BookingNumber, nowUtc));
     }
@@ -196,14 +194,13 @@ public sealed class Booking : AggregateRoot
             throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.BookingReasonTooLong));
         }
 
-        TransitionTo(
+        ApplyTransition(
             BookingStatusCode.Rejected,
             nowUtc,
             hostId,
             "Rejected",
             $"Owner rejected: {RejectionReason}");
         ExpiresAtUtc = null;
-        AggregateVersion++;
 
         Raise(new BookingRejected(Id, BookingNumber, RejectionReason, nowUtc));
     }
@@ -220,14 +217,13 @@ public sealed class Booking : AggregateRoot
             throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.BookingNotExpiredYet));
         }
 
-        TransitionTo(
+        ApplyTransition(
             BookingStatusCode.Expired,
             nowUtc,
             null,
             "Expired",
             "Booking expired — hold released.");
         ExpiresAtUtc = null;
-        AggregateVersion++;
 
         Raise(new BookingExpired(Id, BookingNumber, nowUtc));
     }
@@ -240,13 +236,12 @@ public sealed class Booking : AggregateRoot
         ConfirmedAtUtc = nowUtc;
         ExpiresAtUtc = null;
 
-        TransitionTo(
+        ApplyTransition(
             BookingStatusCode.Confirmed,
             nowUtc,
             null,
             "Paid",
             "Payment succeeded — booking confirmed.");
-        AggregateVersion++;
 
         Raise(new BookingConfirmed(Id, BookingNumber, paymentId, nowUtc));
     }
@@ -278,7 +273,10 @@ public sealed class Booking : AggregateRoot
         return total;
     }
 
-    private void TransitionTo(
+    /// <summary>
+    /// Central status transition + concurrency version bump (do not call Raise for versioning).
+    /// </summary>
+    private void ApplyTransition(
         BookingStatusCode to,
         DateTime nowUtc,
         Guid? actorId,
@@ -290,6 +288,7 @@ public sealed class Booking : AggregateRoot
         _timeline.Add(BookingTimelineEntry.Create(timelineCode, timelineMessage, nowUtc, actorId));
         Status = to;
         SetUpdatedAudit(nowUtc, actorId);
+        AggregateVersion++;
     }
 
     private void EnsureHoldActive(DateTime nowUtc)

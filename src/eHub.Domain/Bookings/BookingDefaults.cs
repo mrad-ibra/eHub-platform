@@ -13,4 +13,7 @@ public static class BookingDefaults
     public static readonly TimeSpan IdempotencyProcessingTtl = TimeSpan.FromMinutes(5);
 
     public const int DefaultPreparationBufferDays = 1;
+
+    /// <summary>Upper bound for asset-specific preparation buffer days.</summary>
+    public const int MaxPreparationBufferDays = 14;
 }

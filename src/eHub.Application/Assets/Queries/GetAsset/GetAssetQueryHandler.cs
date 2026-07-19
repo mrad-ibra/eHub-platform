@@ -58,7 +58,8 @@ public sealed class GetAssetQueryHandler(IAssetRepository assets)
                     asset.RentalRules.MaxRentalDays,
                     asset.RentalRules.MinDriverAge,
                     asset.RentalRules.RequiresLicense,
-                    asset.RentalRules.Notes),
+                    asset.RentalRules.Notes,
+                    asset.RentalRules.PreparationBufferDays),
             new AssetSecurityDepositDto(
                 asset.SecurityDeposit.Required,
                 asset.SecurityDeposit.Amount,
