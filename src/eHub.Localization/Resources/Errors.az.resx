@@ -270,4 +270,7 @@
   <data name="PaymentIdempotencyPayloadMismatch" xml:space="preserve">
     <value>Idempotency-Key fərqli bron ilə təkrar istifadə olunub.</value>
   </data>
+  <data name="PaymentIdempotencyKeyRequired" xml:space="preserve">
+    <value>Idempotency-Key header tələb olunur.</value>
+  </data>
 </root>

@@ -270,4 +270,7 @@
   <data name="PaymentIdempotencyPayloadMismatch" xml:space="preserve">
     <value>Idempotency-Key was reused with a different booking.</value>
   </data>
+  <data name="PaymentIdempotencyKeyRequired" xml:space="preserve">
+    <value>Idempotency-Key header is required.</value>
+  </data>
 </root>

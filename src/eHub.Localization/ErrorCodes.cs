@@ -90,4 +90,5 @@ public static class ErrorCodes
     public const string PaymentBookingNotPayable = nameof(PaymentBookingNotPayable);
     public const string PaymentActiveAlreadyExists = nameof(PaymentActiveAlreadyExists);
     public const string PaymentIdempotencyPayloadMismatch = nameof(PaymentIdempotencyPayloadMismatch);
+    public const string PaymentIdempotencyKeyRequired = nameof(PaymentIdempotencyKeyRequired);
 }
