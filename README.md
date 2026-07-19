@@ -32,8 +32,13 @@ docs/                   # architecture, ADR, ERD, API, BRS, C4, …
 ## Getting started
 
 ```bash
-# Infra (Postgres + Redis + pgAdmin)
+# Infra only (Postgres + Redis + pgAdmin) — API is not in compose
 docker compose -f docker-compose.dev.yml up -d
+
+# Apply EF migrations (not run automatically on API startup)
+dotnet ef database update \
+  --project src/eHub.Persistence \
+  --startup-project src/eHub.Api
 
 dotnet restore
 dotnet build
@@ -43,15 +48,27 @@ dotnet run --project src/eHub.Api
 
 Swagger is available in Development. See [docs/api.md](docs/api.md).
 
+### Ops: database & Docker
+
+| Topic | Decision |
+| --- | --- |
+| **Migrations** | Applied by **deploy/ops** (`dotnet ef database update` or a migration job). API **does not** call `Database.Migrate()` on startup (safer for multi-instance). |
+| **Docker Compose** | Raises **PostgreSQL, Redis, pgAdmin** only. API runs on the host via `dotnet run` until an API image is added to compose. |
+| **Connection** | `ConnectionStrings:DefaultConnection` (see `appsettings.Development.json` / env). Empty → in-memory Booking path. |
+
+### Expire worker (already configurable)
+
+`Jobs:ExpirePendingBookings` in `appsettings.json`: `Enabled`, `IntervalSeconds`, `BatchSize`, `RetryDelaySeconds`. Metrics: expired/skipped counts + duration (logging stub). On shutdown, the current batch stops accepting new rows and commits what was already prepared.
+
 ## Roadmap
 
 | Phase | Focus | Status |
 | --- | --- | --- |
-| **Current** | **Sprint 5.2B — Expire Worker** (+ atomic idempotency, CI PG gate) | In review |
-| **Next** | Production readiness re-eval; remaining ops (API compose, migrate job) | Planned |
-| **Soon** | Payment aggregate; Outbox/Inbox hardening; EF Core persistence for Booking | Planned |
-| **Later** | Notification, GPS, Chat (SignalR), Search abstraction → OpenSearch | Planned |
-| **Ops** | OpenTelemetry, rate limiting, compose.prod hardening, Dependabot/CodeQL | Planned |
+| **Done** | Sprint 5.2B — Expire Worker, outbox table, CI PG gate | **APPROVED WITH MINOR COMMENTS** |
+| **Next** | Notification / Outbox processing | Planned |
+| **Soon** | Payment module | Planned |
+| **Later** | Observability (OTel), Redis caching, Search | Planned |
+| **Ops** | API container in compose; migrate job in pipeline | Planned |
 
 ### Future modules (must stay separate)
 

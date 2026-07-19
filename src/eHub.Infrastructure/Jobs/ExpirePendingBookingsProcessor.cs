@@ -34,6 +34,12 @@ public sealed class ExpirePendingBookingsProcessor(
 
         foreach (var booking in batch)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                // Graceful shutdown: stop taking new rows; persist what this tick already prepared.
+                break;
+            }
+
             try
             {
                 // EF-loaded aggregates have an empty buffer; clear anyway for in-memory reuse.
@@ -48,6 +54,10 @@ public sealed class ExpirePendingBookingsProcessor(
                 await notifier.NotifyExpiredAsync(booking, cancellationToken);
                 expired++;
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
             catch (ConflictException)
             {
                 skipped++;
@@ -60,7 +70,8 @@ public sealed class ExpirePendingBookingsProcessor(
 
         if (expired > 0)
         {
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+            // Prefer committing the prepared slice even when shutting down.
+            await unitOfWork.SaveChangesAsync(CancellationToken.None);
         }
 
         var duration = clock.UtcNow - started;

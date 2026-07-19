@@ -4,8 +4,9 @@
 **Sprint 5.1:** In-memory + P0 — **APPROVED**  
 **Sprint 5.2A:** EF Persistence Foundation — **APPROVED WITH COMMENTS**  
 **Sprint 5.2A.1:** APPROVED WITH REQUIRED FOLLOW-UPS — see [16](16-sprint-52a1-rereview-disposition.md)  
-**Sprint 5.2B:** Expire Worker + atomic idempotency + CI PG gate — see [15](15-sprint-52b-expire-worker.md)  
-**Production readiness:** NOT APPROVED  
+**Sprint 5.2B:** Expire Worker + atomic idempotency + CI PG gate — **APPROVED WITH MINOR COMMENTS** ([15](15-sprint-52b-expire-worker.md), [17](17-sprint-52b-approval.md))  
+**Production readiness:** improving (8.8/10) — platform work next (Notification / Payment / OTel)  
+**Next focus (Architect):** Notification/Outbox processing → Payment → Observability → Redis → Search  
 
 ### Applied after re-review
 
