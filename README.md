@@ -67,7 +67,7 @@ Migrations are **not** applied inside `Program.cs` (deploy/ops owns schema chang
 | --- | --- |
 | **Migrations** | `dotnet ef database update` or a pipeline job — never auto on multi-instance startup |
 | **Compose** | Postgres + Redis + pgAdmin + **API** (`docker-compose.dev.yml`) |
-| **Connection** | `ConnectionStrings:DefaultConnection`. Empty → in-memory Booking path |
+| **Connection** | Prefer Vault (`docs/ops/vault.md`). Fallback: `ConnectionStrings:DefaultConnection` env / appsettings. Empty → in-memory Booking |
 | **Observability** | OTel traces/metrics, `X-Correlation-Id`, Prometheus `/metrics`, Serilog |
 
 ### Booking metrics

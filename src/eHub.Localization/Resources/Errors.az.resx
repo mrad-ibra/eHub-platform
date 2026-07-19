@@ -219,4 +219,43 @@
   <data name="JwtSecretPlaceholder" xml:space="preserve">
     <value>JWT imza açarı placeholder-dır və işə salınmazdan əvvəl dəyişdirilməlidir.</value>
   </data>
+  <data name="PaymentStatusCodeInvalid" xml:space="preserve">
+    <value>Naməlum ödəniş status kodu.</value>
+  </data>
+  <data name="PaymentProviderCodeInvalid" xml:space="preserve">
+    <value>Naməlum ödəniş provayder kodu.</value>
+  </data>
+  <data name="PaymentAttemptKindInvalid" xml:space="preserve">
+    <value>Naməlum ödəniş cəhd növü.</value>
+  </data>
+  <data name="PaymentAttemptResultInvalid" xml:space="preserve">
+    <value>Naməlum ödəniş cəhd nəticəsi.</value>
+  </data>
+  <data name="PaymentRefundStatusInvalid" xml:space="preserve">
+    <value>Naməlum geri ödəniş status kodu.</value>
+  </data>
+  <data name="PaymentAmountInvalid" xml:space="preserve">
+    <value>Ödəniş məbləği sıfırdan böyük olmalıdır.</value>
+  </data>
+  <data name="PaymentIdempotencyKeyInvalid" xml:space="preserve">
+    <value>Ödəniş idempotency açarı etibarsızdır və ya çox uzundur.</value>
+  </data>
+  <data name="PaymentProviderPaymentIdInvalid" xml:space="preserve">
+    <value>Provayder ödəniş id-si etibarsızdır və ya çox uzundur.</value>
+  </data>
+  <data name="PaymentInvalidStatusTransition" xml:space="preserve">
+    <value>Bu ödəniş status keçidi icazəli deyil.</value>
+  </data>
+  <data name="PaymentNotExpiredYet" xml:space="preserve">
+    <value>Ödəniş pəncərəsi hələ bitməyib.</value>
+  </data>
+  <data name="PaymentRefundNotAllowed" xml:space="preserve">
+    <value>Geri ödəniş yalnız uğurlu və ya qismən geri ödənilmiş ödənişlər üçün mümkündür.</value>
+  </data>
+  <data name="PaymentRefundAmountInvalid" xml:space="preserve">
+    <value>Geri ödəniş məbləği sıfırdan böyük olmalı və qalan məbləği aşmamalıdır.</value>
+  </data>
+  <data name="PaymentRefundReasonTooLong" xml:space="preserve">
+    <value>Geri ödəniş səbəbi çox uzundur.</value>
+  </data>
 </root>

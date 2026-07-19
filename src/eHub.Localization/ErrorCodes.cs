@@ -72,4 +72,18 @@ public static class ErrorCodes
     public const string BookingPickupAddressRequired = nameof(BookingPickupAddressRequired);
     public const string BookingDropoffAddressRequired = nameof(BookingDropoffAddressRequired);
     public const string JwtSecretPlaceholder = nameof(JwtSecretPlaceholder);
+
+    public const string PaymentStatusCodeInvalid = nameof(PaymentStatusCodeInvalid);
+    public const string PaymentProviderCodeInvalid = nameof(PaymentProviderCodeInvalid);
+    public const string PaymentAttemptKindInvalid = nameof(PaymentAttemptKindInvalid);
+    public const string PaymentAttemptResultInvalid = nameof(PaymentAttemptResultInvalid);
+    public const string PaymentRefundStatusInvalid = nameof(PaymentRefundStatusInvalid);
+    public const string PaymentAmountInvalid = nameof(PaymentAmountInvalid);
+    public const string PaymentIdempotencyKeyInvalid = nameof(PaymentIdempotencyKeyInvalid);
+    public const string PaymentProviderPaymentIdInvalid = nameof(PaymentProviderPaymentIdInvalid);
+    public const string PaymentInvalidStatusTransition = nameof(PaymentInvalidStatusTransition);
+    public const string PaymentNotExpiredYet = nameof(PaymentNotExpiredYet);
+    public const string PaymentRefundNotAllowed = nameof(PaymentRefundNotAllowed);
+    public const string PaymentRefundAmountInvalid = nameof(PaymentRefundAmountInvalid);
+    public const string PaymentRefundReasonTooLong = nameof(PaymentRefundReasonTooLong);
 }

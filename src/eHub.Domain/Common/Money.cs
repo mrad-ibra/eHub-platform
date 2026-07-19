@@ -51,6 +51,14 @@ public sealed class Money : IEquatable<Money>
         return Create(Amount * factor, CurrencyId);
     }
 
+    public Money Subtract(Money other)
+    {
+        EnsureSameCurrency(other);
+        return Create(Amount - other.Amount, CurrencyId);
+    }
+
+    public static Money Zero(Guid currencyId) => Create(0m, currencyId);
+
     public bool Equals(Money? other)
         => other is not null
            && Amount == other.Amount

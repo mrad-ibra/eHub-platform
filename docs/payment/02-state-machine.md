@@ -1,6 +1,6 @@
 # EHUB-602 — Payment State Machine
 
-**Status:** READY FOR ARCHITECT REVIEW
+**Status:** APPROVED (Sprint 6.0)
 
 ## Statuses (locked candidate)
 

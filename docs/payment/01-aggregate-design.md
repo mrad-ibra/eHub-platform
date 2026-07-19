@@ -1,6 +1,6 @@
 # EHUB-601 — Payment Aggregate Design
 
-**Status:** READY FOR ARCHITECT REVIEW  
+**Status:** APPROVED (Sprint 6.0) · Domain Phase 1 implemented (Sprint 6.1)  
 **Boundary:** Payment is its **own** aggregate. It is **not** inside Booking. Booking and Payment reference each other by **id only** (L7).
 
 ## Aggregate diagram

@@ -1,6 +1,19 @@
 ﻿{
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
+    "https": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "applicationUrl": "https://localhost:7299;http://localhost:5270",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "VAULT_ADDR": "http://187.127.88.26:8200",
+        "VAULT_SECRET_PATH": "ehub/production",
+        "VAULT_MOUNT": "secret"
+      }
+    },
     "http": {
       "commandName": "Project",
       "dotnetRunMessages": true,
@@ -9,11 +22,12 @@
       "applicationUrl": "http://localhost:5270",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ConnectionStrings__DefaultConnection": "Host=localhost;Port=5432;Database=ehub;Username=ehub;Password=ehub",
-        "ConnectionStrings__Redis": "localhost:6379"
+        "VAULT_ADDR": "http://187.127.88.26:8200",
+        "VAULT_SECRET_PATH": "ehub/production",
+        "VAULT_MOUNT": "secret"
       }
     },
-    "https": {
+    "https-local-docker": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,

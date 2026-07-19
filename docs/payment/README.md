@@ -1,27 +1,17 @@
 # EPIC 6 — Payment
 
-**Sprint 6.0:** Payment Architecture Pack — **READY FOR ARCHITECT REVIEW**  
-**Implementation:** Sprint 6.1 starts **only after** this pack is **APPROVED**.
+**Sprint 6.0:** Payment Architecture Pack — **APPROVED** (2026-07-20)  
+**Sprint 6.1:** Payment Implementation — **IN PROGRESS** (Phase 1 Domain)
 
-Design only. No code · no migrations · no provider SDK wiring in 6.0.
+See [12-sprint-60-approved-61-phase1.md](12-sprint-60-approved-61-phase1.md).
 
 ## Documents
 
 | # | Document | Purpose |
 |---|----------|---------|
-| — | [README.md](README.md) | Index + locked principles + review checklist |
-| 00 | [00-business-rules.md](00-business-rules.md) | BR-PAY-* |
-| 01 | [01-aggregate-design.md](01-aggregate-design.md) | Aggregate boundary + model |
-| 02 | [02-state-machine.md](02-state-machine.md) | Statuses + transitions |
-| 03 | [03-payment-lifecycle.md](03-payment-lifecycle.md) | End-to-end flows |
-| 04 | [04-provider-strategy.md](04-provider-strategy.md) | Provider ACL |
-| 05 | [05-webhook-strategy.md](05-webhook-strategy.md) | Signature + inbox |
-| 06 | [06-idempotency.md](06-idempotency.md) | Exactly-once effect |
-| 07 | [07-refund-strategy.md](07-refund-strategy.md) | Partial / full refund |
-| 08 | [08-database-design.md](08-database-design.md) | Logical ER |
-| 09 | [09-api-contract.md](09-api-contract.md) | REST + webhook |
-| 10 | [10-failure-scenarios.md](10-failure-scenarios.md) | F-PAY-* |
-| 11 | [11-acceptance-edge-tests.md](11-acceptance-edge-tests.md) | AC / edges / tests |
+| — | [README.md](README.md) | Index + locked principles |
+| 00–11 | Architecture pack | Rules, aggregate, SM, webhook, refund, API, AC |
+| 12 | [12-sprint-60-approved-61-phase1.md](12-sprint-60-approved-61-phase1.md) | Approval + 6.1 Phase 1 |
 
 ## Locked principles (non-negotiable for 6.1)
 
@@ -38,36 +28,12 @@ Design only. No code · no migrations · no provider SDK wiring in 6.0.
 | L9 | Payment → Booking effects only via **Outbox / events** |
 | L10 | Failed payment must **not** leave Booking stuck forever — TTL + optional retry while hold active |
 
-## Proposed model
+## Architect recommendations (apply during 6.1)
 
-```text
-Payment
-├── BookingId
-├── Amount / Currency          ← from Booking snapshot
-├── Provider / ProviderPaymentId?
-├── Status
-├── IdempotencyKey
-├── FailureReason?
-├── PaidAtUtc?
-├── RefundedAmount
-├── Version
-├── StatusHistory[]
-├── Attempts[]
-└── Refunds[]                  ← separate audited rows
-
-Statuses:
-  Created | Pending | Authorized | Succeeded | Failed
-  | Cancelled | Expired | PartiallyRefunded | Refunded
-```
-
-## Architect review checklist
-
-- [ ] L1–L10 locked
-- [ ] State machine + late-callback / Failed→TTL rules approved
-- [ ] Partial vs full refund rules approved
-- [ ] Webhook verify → dedupe → apply order approved
-- [ ] Outbox boundary Booking↔Payment approved
-- [ ] Acceptance scenarios in [11](11-acceptance-edge-tests.md) sufficient for 6.1
+- Small provider interface (`Create` / `Cancel` / `Refund` / `VerifyWebhook`)
+- `Money` value object everywhere
+- `PaymentTimeline` (Booking-style audit trail)
+- Outbox between Payment and Booking confirm
 
 ## Relationship to Booking (EPIC 5)
 
@@ -77,10 +43,6 @@ Statuses:
 | `PendingPayment` + 15m TTL | Must succeed inside that window |
 | Confirms only on `PaymentSucceeded` (hold active) | Emits events; never calls Booking directly |
 | Expire worker releases hold | Failed/Expired payments; retry only while Booking still payable |
-
-## Design-first order
-
-Business Rules → Aggregate → State Machine → Lifecycle → Provider → Webhook → Idempotency → Refund → ER → API → Failures → AC/Tests → **(6.1) code**
 
 ## Related
 

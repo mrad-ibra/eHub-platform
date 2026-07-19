@@ -13,6 +13,7 @@
 | [booking/](booking/README.md) | **Sprint 5.2 COMPLETED** — Booking Core |
 | [payment/](payment/README.md) | **Sprint 6.0 READY FOR REVIEW** — Payment Architecture Pack |
 | [observability.md](observability.md) | OTel, metrics, correlation, health |
+| [ops/vault.md](ops/vault.md) | HashiCorp Vault secrets for eHub |
 | [booking-technical-design.md](booking-technical-design.md) | Pointer → `booking/` (legacy path) |
 | [adr/](adr/README.md) | Architecture Decision Records |
 

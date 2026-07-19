@@ -13,6 +13,7 @@ try
     Log.Information("Starting eHub API");
 
     var builder = WebApplication.CreateBuilder(args);
+    builder.AddEHubVaultConfiguration();
 
     builder.AddEHubSerilog();
     builder.AddEHubObservability();

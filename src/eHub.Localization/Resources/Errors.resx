@@ -219,4 +219,43 @@
   <data name="JwtSecretPlaceholder" xml:space="preserve">
     <value>JWT signing key is a placeholder and must be replaced before running.</value>
   </data>
+  <data name="PaymentStatusCodeInvalid" xml:space="preserve">
+    <value>Unknown payment status code.</value>
+  </data>
+  <data name="PaymentProviderCodeInvalid" xml:space="preserve">
+    <value>Unknown payment provider code.</value>
+  </data>
+  <data name="PaymentAttemptKindInvalid" xml:space="preserve">
+    <value>Unknown payment attempt kind.</value>
+  </data>
+  <data name="PaymentAttemptResultInvalid" xml:space="preserve">
+    <value>Unknown payment attempt result.</value>
+  </data>
+  <data name="PaymentRefundStatusInvalid" xml:space="preserve">
+    <value>Unknown refund status code.</value>
+  </data>
+  <data name="PaymentAmountInvalid" xml:space="preserve">
+    <value>Payment amount must be greater than zero.</value>
+  </data>
+  <data name="PaymentIdempotencyKeyInvalid" xml:space="preserve">
+    <value>Payment idempotency key is invalid or too long.</value>
+  </data>
+  <data name="PaymentProviderPaymentIdInvalid" xml:space="preserve">
+    <value>Provider payment id is invalid or too long.</value>
+  </data>
+  <data name="PaymentInvalidStatusTransition" xml:space="preserve">
+    <value>This payment status transition is not allowed.</value>
+  </data>
+  <data name="PaymentNotExpiredYet" xml:space="preserve">
+    <value>Payment window has not elapsed yet.</value>
+  </data>
+  <data name="PaymentRefundNotAllowed" xml:space="preserve">
+    <value>Refunds are only allowed for succeeded or partially refunded payments.</value>
+  </data>
+  <data name="PaymentRefundAmountInvalid" xml:space="preserve">
+    <value>Refund amount must be greater than zero and not exceed the remaining refundable amount.</value>
+  </data>
+  <data name="PaymentRefundReasonTooLong" xml:space="preserve">
+    <value>Refund reason is too long.</value>
+  </data>
 </root>
