@@ -175,6 +175,8 @@ namespace eHub.Persistence.Migrations
                 table: "bookings",
                 columns: new[] { "RenterId", "CreatedAtUtc" });
 
+            // Correctness line (Sprint 5.2A / 5.2A.1): multi-instance overlap prevention.
+            // Application ListBlockingByAssetAsync is UX-only early rejection.
             migrationBuilder.Sql("CREATE EXTENSION IF NOT EXISTS btree_gist;");
             migrationBuilder.Sql("CREATE SEQUENCE IF NOT EXISTS booking_number_seq START 1;");
             migrationBuilder.Sql("""

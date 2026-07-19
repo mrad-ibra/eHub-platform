@@ -56,6 +56,11 @@ public sealed class EfBookingIdempotencyStore(EHubDbContext db) : IBookingIdempo
                 existing = await db.BookingIdempotencyEntries
                     .FirstAsync(e => e.RenterId == userId && e.IdempotencyKey == idempotencyKey, cancellationToken);
             }
+            catch (DbUpdateException ex)
+            {
+                PostgresExceptionMapper.ThrowIfMapped(ex);
+                throw;
+            }
         }
 
         if (!string.Equals(existing.RequestHash, requestHash, StringComparison.Ordinal))

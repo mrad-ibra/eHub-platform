@@ -1,19 +1,21 @@
 using eHub.Application.Bookings.Abstractions;
+using eHub.Application.Common.Time;
 using eHub.Domain.Bookings;
 using eHub.Domain.Exceptions;
 using eHub.Localization;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace eHub.Persistence.Repositories;
 
-public sealed class EfBookingRepository(EHubDbContext db) : IBookingRepository
+public sealed class EfBookingRepository(EHubDbContext db, IClock clock) : IBookingRepository
 {
     public Task AddAsync(Booking booking, CancellationToken cancellationToken = default)
-        => AddAsync(booking, DateTime.UtcNow, cancellationToken);
+        => AddAsync(booking, clock.UtcNow, cancellationToken);
 
     public async Task AddAsync(Booking booking, DateTime nowUtc, CancellationToken cancellationToken = default)
     {
+        // Early UX rejection only. Correctness under concurrency is enforced by
+        // PostgreSQL EXCLUDE USING gist (bookings_no_overlap) + unique indexes.
         var conflicts = await ListBlockingByAssetAsync(booking.AssetId, nowUtc, cancellationToken);
         foreach (var existing in conflicts)
         {
@@ -45,15 +47,13 @@ public sealed class EfBookingRepository(EHubDbContext db) : IBookingRepository
     public Task<IReadOnlyList<Booking>> ListBlockingByAssetAsync(
         Guid assetId,
         CancellationToken cancellationToken = default)
-        => ListBlockingByAssetAsync(assetId, DateTime.UtcNow, cancellationToken);
+        => ListBlockingByAssetAsync(assetId, clock.UtcNow, cancellationToken);
 
     public async Task<IReadOnlyList<Booking>> ListBlockingByAssetAsync(
         Guid assetId,
         DateTime nowUtc,
         CancellationToken cancellationToken = default)
     {
-        // Load candidates; BlocksCalendar applied in memory (status + expiry).
-        // DB exclusion constraint is the concurrency correctness line.
         var candidates = await db.Bookings
             .AsNoTracking()
             .Where(b => b.AssetId == assetId)

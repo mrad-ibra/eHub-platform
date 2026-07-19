@@ -12,8 +12,10 @@
     <PackageReference Include="FluentAssertions" Version="7.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="Testcontainers.PostgreSql" Version="4.3.0" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,6 +25,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\eHub.Api\eHub.Api.csproj" />
     <ProjectReference Include="..\..\src\eHub.Persistence\eHub.Persistence.csproj" />
+    <ProjectReference Include="..\..\src\eHub.Application\eHub.Application.csproj" />
+    <ProjectReference Include="..\..\src\eHub.Domain\eHub.Domain.csproj" />
   </ItemGroup>
 
 </Project>

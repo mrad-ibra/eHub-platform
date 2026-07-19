@@ -1,15 +1,15 @@
 # Sprint 5.2A — EF Persistence Foundation
 
-**Status:** IN PROGRESS  
-**Authorized:** Architect green light after Sprint 5.1 P0 re-review  
+**Status:** APPROVED WITH COMMENTS (Architect) → **5.2A.1 correctness pack in progress/done**  
 **Depends on:** Sprint 5.1 in-memory APPROVED  
 
 ## Ordering decision
 
-1. **5.2A EF Persistence** (this sprint)  
-2. **5.2B Expire Worker** — after persistent, queryable storage  
+1. **5.2A** EF Persistence foundation ✅  
+2. **5.2A.1** EXCLUDE visibility + Npgsql mapping + PG integration tests ✅  
+3. **5.2B** Expire Worker — after 5.2A.1  
 
-## Idempotency TTL (applied)
+## Idempotency TTL
 
 | TTL | Value | Purpose |
 |-----|-------|---------|
@@ -26,14 +26,46 @@ Within one DB transaction / one `SaveChangesAsync`:
 3. Outbox messages (when added)  
 4. `SaveChangesAsync` → commit  
 
-`CompleteAsync` must **not** flush separately. On rollback, booking + idempotency + outbox all revert.  
-`AbandonAsync` only clears **Started** leases after failed orchestration (before successful commit).
+`CompleteAsync` must **not** flush separately.
 
-## Required constraints
+## DB correctness line (in Initial migration)
 
-- `UNIQUE (booking_number)`  
-- `UNIQUE (renter_id, idempotency_key)`  
-- Indexes: `(asset_id, status)`, `(expires_at_utc, status)`, `(renter_id, created_at_utc)`, `(host_id, created_at_utc)`  
-- PostgreSQL `EXCLUDE USING gist` on occupied range for blocking statuses  
+`InitialBookingPersistence` applies:
 
-Application conflict checks remain for early UX errors; **DB exclusion is the correctness line**.
+```sql
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+CREATE SEQUENCE IF NOT EXISTS booking_number_seq START 1;
+
+ALTER TABLE bookings
+ADD CONSTRAINT bookings_no_overlap
+EXCLUDE USING gist (
+    "AssetId" WITH =,
+    daterange(start_date, end_date + "BufferDays", '[]') WITH &&
+)
+WHERE ("Status" IN (
+    'PENDING_OWNER_APPROVAL',
+    'PENDING_PAYMENT',
+    'CONFIRMED',
+    'IN_PROGRESS'
+));
+```
+
+Also: unique `BookingNumber`, PK `(RenterId, IdempotencyKey)`, required indexes.
+
+Application `ListBlockingByAssetAsync` = **UX early rejection only**.  
+`PostgresExceptionMapper` maps `23505` / `23P01` → `ConflictException` on `EfUnitOfWork.SaveChangesAsync`.
+
+## Integration tests (Testcontainers)
+
+`BookingPostgresPersistenceTests` (skip if Docker/Postgres unavailable):
+
+- Migration applies exclusion + sequence  
+- Insert + owned read-back  
+- Transaction rollback  
+- Idempotency unique / mismatch  
+- Parallel overlapping inserts → one wins via EXCLUDE  
+- AggregateVersion concurrency token  
+
+## Production readiness
+
+Still **NOT APPROVED** until expire worker + broader ops (5.2B+).

@@ -2,8 +2,9 @@
 
 **Sprint 5.0:** CLOSED — Architecture **APPROVED**  
 **Sprint 5.1:** In-memory + P0 — **APPROVED**  
-**Sprint 5.2A:** EF Persistence Foundation — **IN PROGRESS** ([13-sprint-52a-ef-persistence.md](13-sprint-52a-ef-persistence.md))  
-**Sprint 5.2B:** Expire Worker — after 5.2A  
+**Sprint 5.2A:** EF Persistence Foundation — **APPROVED WITH COMMENTS**  
+**Sprint 5.2A.1:** EXCLUDE + Npgsql mapping + PG tests — see [13](13-sprint-52a-ef-persistence.md), [14](14-sprint-52a1-disposition.md)  
+**Sprint 5.2B:** Expire Worker — next after 5.2A.1  
 **Production readiness:** NOT APPROVED  
 
 ### Applied after re-review
