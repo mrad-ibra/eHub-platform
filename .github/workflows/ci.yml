@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+
+env:
+  DOTNET_NOLOGO: true
+  EHUB_REQUIRE_POSTGRES_TESTS: "true"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+
+      - name: Unit tests
+        run: dotnet test tests/eHub.UnitTests/eHub.UnitTests.csproj --no-build -c Release --verbosity minimal
+
+      - name: Integration tests (PostgreSQL required)
+        run: dotnet test tests/eHub.IntegrationTests/eHub.IntegrationTests.csproj --no-build -c Release --verbosity minimal

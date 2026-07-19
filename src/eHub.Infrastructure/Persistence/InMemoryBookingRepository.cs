@@ -82,4 +82,21 @@ public sealed class InMemoryBookingRepository : IBookingRepository
 
         return Task.FromResult(items);
     }
+
+    public Task<IReadOnlyList<Booking>> ListExpiredHoldsAsync(
+        DateTime nowUtc,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<Booking> items = _bookings.Values
+            .Where(b =>
+                b.Status.IsOneOf(BookingStatusCode.PendingOwnerApproval, BookingStatusCode.PendingPayment)
+                && b.ExpiresAtUtc is { } expires
+                && expires <= nowUtc)
+            .OrderBy(b => b.ExpiresAtUtc)
+            .Take(Math.Max(0, take))
+            .ToArray();
+
+        return Task.FromResult(items);
+    }
 }

@@ -47,7 +47,9 @@ public static class PostgresExceptionMapper
         if (constraint.Contains("idempotency", StringComparison.OrdinalIgnoreCase)
             || constraint.Contains("booking_idempotency", StringComparison.OrdinalIgnoreCase))
         {
-            return ErrorResources.Get(ErrorCodes.BookingIdempotencyPayloadMismatch);
+            // Unique violation alone cannot distinguish payload mismatch vs parallel same-hash.
+            // Callers that insert should re-read the row (BeginAsync does). Fallback semantics: in progress.
+            return ErrorResources.Get(ErrorCodes.BookingRequestInProgress);
         }
 
         if (constraint.Contains("BookingNumber", StringComparison.OrdinalIgnoreCase)

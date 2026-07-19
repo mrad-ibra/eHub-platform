@@ -37,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<IBookingRepository, Repositories.EfBookingRepository>();
         services.AddScoped<IBookingIdempotencyStore, Repositories.EfBookingIdempotencyStore>();
         services.AddScoped<IBookingNumberGenerator, Repositories.EfBookingNumberGenerator>();
+        services.AddScoped<IOutboxWriter, EfOutboxWriter>();
 
         return services;
     }

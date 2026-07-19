@@ -79,7 +79,7 @@ public sealed class CreateBookingCommandHandler(
             case IdempotencyBeginResult.PayloadMismatch:
                 throw new ConflictException(ErrorResources.Get(ErrorCodes.BookingIdempotencyPayloadMismatch));
             case IdempotencyBeginResult.InProgress:
-                throw new ConflictException(ErrorResources.Get(ErrorCodes.BookingConflict));
+                throw new ConflictException(ErrorResources.Get(ErrorCodes.BookingRequestInProgress));
             case IdempotencyBeginResult.Began:
                 break;
             default:

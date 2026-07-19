@@ -20,4 +20,12 @@ public interface IBookingRepository
         Guid assetId,
         DateTime nowUtc,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Soft/Hard holds whose <c>ExpiresAtUtc</c> has passed (tracked entities for update).
+    /// </summary>
+    Task<IReadOnlyList<Booking>> ListExpiredHoldsAsync(
+        DateTime nowUtc,
+        int take,
+        CancellationToken cancellationToken = default);
 }

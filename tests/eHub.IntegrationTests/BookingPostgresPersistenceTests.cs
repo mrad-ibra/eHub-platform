@@ -7,6 +7,7 @@ using eHub.Persistence.Repositories;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
 
 namespace eHub.IntegrationTests;
 
@@ -249,5 +250,131 @@ public sealed class BookingPostgresPersistenceTests
         b.Approve(b.HostId, clock.UtcNow.AddMinutes(2));
         var act = () => dbB.SaveChangesAsync();
         await act.Should().ThrowAsync<DbUpdateConcurrencyException>();
+    }
+
+    [SkippableFact]
+    public async Task ExpiredHold_StillBlocksViaExclusion_UntilWorkerExpires()
+    {
+        RequirePostgres();
+
+        var assetId = Guid.NewGuid();
+        var createClock = new FixedClock(new DateTime(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc));
+        var expireClock = new FixedClock(new DateTime(2026, 7, 2, 1, 0, 0, DateTimeKind.Utc));
+
+        await using (var db = _fixture.CreateDbContext())
+        {
+            var repo = new EfBookingRepository(db, createClock);
+            var numbers = new EfBookingNumberGenerator(db, createClock);
+            var number = await numbers.NextAsync();
+            var hold = PostgresBookingFixture.CreateSoftHold(
+                assetId,
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                new DateOnly(2026, 9, 10),
+                new DateOnly(2026, 9, 12),
+                number,
+                createClock.UtcNow);
+
+            await repo.AddAsync(hold, createClock.UtcNow);
+            await db.SaveChangesAsync();
+
+            // Simulate elapsed Soft Hold TTL without status change (lazy expire gap).
+            await db.Database.ExecuteSqlInterpolatedAsync(
+                $"""UPDATE bookings SET "ExpiresAtUtc" = {createClock.UtcNow.AddHours(-1)} WHERE "Id" = {hold.Id}""");
+        }
+
+        await using (var db = _fixture.CreateDbContext())
+        {
+            var uow = new EfUnitOfWork(db);
+            var numbers = new EfBookingNumberGenerator(db, expireClock);
+            var number = await numbers.NextAsync();
+            var competing = PostgresBookingFixture.CreateSoftHold(
+                assetId,
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                new DateOnly(2026, 9, 10),
+                new DateOnly(2026, 9, 12),
+                number,
+                expireClock.UtcNow);
+
+            // App-level list may not block (BlocksCalendar), but EXCLUDE still rejects.
+            await db.Bookings.AddAsync(competing);
+            var act = () => uow.SaveChangesAsync();
+            await act.Should().ThrowAsync<ConflictException>();
+        }
+
+        await using (var db = _fixture.CreateDbContext())
+        {
+            var holds = await new EfBookingRepository(db, expireClock)
+                .ListExpiredHoldsAsync(expireClock.UtcNow, 10);
+            holds.Should().HaveCount(1);
+            holds[0].Expire(expireClock.UtcNow);
+            await new EfOutboxWriter(db).EnqueueAsync(holds[0].DomainEvents.First(), expireClock.UtcNow);
+            holds[0].ClearDomainEvents();
+            await db.SaveChangesAsync();
+
+            var outboxCount = await db.OutboxMessages.CountAsync();
+            outboxCount.Should().Be(1);
+        }
+
+        await using (var db = _fixture.CreateDbContext())
+        {
+            var repo = new EfBookingRepository(db, expireClock);
+            var numbers = new EfBookingNumberGenerator(db, expireClock);
+            var number = await numbers.NextAsync();
+            var afterExpire = PostgresBookingFixture.CreateSoftHold(
+                assetId,
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                new DateOnly(2026, 9, 10),
+                new DateOnly(2026, 9, 12),
+                number,
+                expireClock.UtcNow);
+
+            await repo.AddAsync(afterExpire, expireClock.UtcNow);
+            await db.SaveChangesAsync();
+
+            (await db.Bookings.CountAsync(b => b.AssetId == assetId)).Should().Be(2);
+        }
+    }
+
+    [SkippableFact]
+    public async Task ExpiredIdempotencyLease_Takeover_IsAtomic_OnlyOneBegan()
+    {
+        RequirePostgres();
+
+        var renterId = Guid.NewGuid();
+        const string key = "lease-race";
+        const string hash = "same-hash";
+        var past = new DateTime(2026, 7, 19, 10, 0, 0, DateTimeKind.Utc);
+        var now = new DateTime(2026, 7, 19, 12, 0, 0, DateTimeKind.Utc);
+
+        await using (var seed = _fixture.CreateDbContext())
+        {
+            seed.BookingIdempotencyEntries.Add(new BookingIdempotencyEntry
+            {
+                RenterId = renterId,
+                IdempotencyKey = key,
+                RequestHash = hash,
+                Status = BookingIdempotencyStatus.Started,
+                BookingId = null,
+                CreatedAtUtc = past,
+                ExpiresAtUtc = past.AddMinutes(5)
+            });
+            await seed.SaveChangesAsync();
+        }
+
+        await using var dbA = _fixture.CreateDbContext();
+        await using var dbB = _fixture.CreateDbContext();
+        var storeA = new EfBookingIdempotencyStore(dbA);
+        var storeB = new EfBookingIdempotencyStore(dbB);
+
+        var tA = storeA.BeginAsync(renterId, key, hash, now, TimeSpan.FromMinutes(5));
+        var tB = storeB.BeginAsync(renterId, key, hash, now, TimeSpan.FromMinutes(5));
+        await Task.WhenAll(tA, tB);
+
+        var results = new[] { tA.Result, tB.Result };
+        results.Count(r => r is IdempotencyBeginResult.Began).Should().Be(1);
+        results.Count(r => r is IdempotencyBeginResult.InProgress).Should().Be(1);
     }
 }

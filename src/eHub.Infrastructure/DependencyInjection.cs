@@ -5,10 +5,12 @@ using eHub.Application.Bookings.Services;
 using eHub.Application.Catalog.Abstractions;
 using eHub.Application.Common.Persistence;
 using eHub.Application.Common.Time;
+using eHub.Application.Configuration;
 using eHub.Application.Identity.Abstractions;
 using eHub.Infrastructure.Catalog;
 using eHub.Infrastructure.Email;
 using eHub.Infrastructure.Identity;
+using eHub.Infrastructure.Jobs;
 using eHub.Infrastructure.Persistence;
 using eHub.Infrastructure.Time;
 using eHub.Persistence;
@@ -23,6 +25,8 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.Configure<JobsOptions>(configuration.GetSection(JobsOptions.SectionName));
+
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
@@ -33,6 +37,8 @@ public static class DependencyInjection
         services.AddSingleton<ILoginHistoryRepository, InMemoryLoginHistoryRepository>();
         services.AddSingleton<IAssetRepository, InMemoryAssetRepository>();
         services.AddSingleton<BookingAvailabilityService>();
+        services.AddSingleton<IBookingExpiryNotifier, LoggingBookingExpiryNotifier>();
+        services.AddSingleton<IExpireBookingsMetrics, LoggingExpireBookingsMetrics>();
         AddCatalogRepositories(services);
         services.AddHostedService<AuthSeedHostedService>();
         services.AddHostedService<CatalogSeedHostedService>();
@@ -40,6 +46,8 @@ public static class DependencyInjection
         if (eHub.Persistence.DependencyInjection.IsEfPersistenceEnabled(configuration))
         {
             services.AddPersistence(configuration);
+            services.AddScoped<ExpirePendingBookingsProcessor>();
+            services.AddHostedService<ExpirePendingBookingsHostedService>();
         }
         else
         {
@@ -47,6 +55,9 @@ public static class DependencyInjection
             services.AddSingleton<IBookingNumberGenerator, InMemoryBookingNumberGenerator>();
             services.AddSingleton<IBookingIdempotencyStore, InMemoryBookingIdempotencyStore>();
             services.AddSingleton<IUnitOfWork, InMemoryUnitOfWork>();
+            services.AddSingleton<IOutboxWriter, NullOutboxWriter>();
+            services.AddScoped<ExpirePendingBookingsProcessor>();
+            services.AddHostedService<ExpirePendingBookingsHostedService>();
         }
 
         return services;

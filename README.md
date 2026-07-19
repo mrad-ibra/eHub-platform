@@ -47,8 +47,8 @@ Swagger is available in Development. See [docs/api.md](docs/api.md).
 
 | Phase | Focus | Status |
 | --- | --- | --- |
-| **Current** | **Sprint 5.2A — EF Persistence Foundation** (Booking DbContext, constraints, migration) | In progress |
-| **Next** | Sprint 5.2B Expire Worker; deeper PG integration tests | Planned |
+| **Current** | **Sprint 5.2B — Expire Worker** (+ atomic idempotency, CI PG gate) | In review |
+| **Next** | Production readiness re-eval; remaining ops (API compose, migrate job) | Planned |
 | **Soon** | Payment aggregate; Outbox/Inbox hardening; EF Core persistence for Booking | Planned |
 | **Later** | Notification, GPS, Chat (SignalR), Search abstraction → OpenSearch | Planned |
 | **Ops** | OpenTelemetry, rate limiting, compose.prod hardening, Dependabot/CodeQL | Planned |

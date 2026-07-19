@@ -66,4 +66,27 @@ public sealed class EfBookingRepository(EHubDbContext db, IClock clock) : IBooki
 
         return candidates.Where(b => b.BlocksCalendar(nowUtc)).OrderBy(b => b.Period.StartDate).ToArray();
     }
+
+    public async Task<IReadOnlyList<Booking>> ListExpiredHoldsAsync(
+        DateTime nowUtc,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        if (take <= 0)
+        {
+            return [];
+        }
+
+        return await db.Bookings
+            .Include(b => b.Timeline)
+            .Include(b => b.StatusHistory)
+            .Where(b =>
+                (b.Status == BookingStatusCode.PendingOwnerApproval
+                 || b.Status == BookingStatusCode.PendingPayment)
+                && b.ExpiresAtUtc != null
+                && b.ExpiresAtUtc <= nowUtc)
+            .OrderBy(b => b.ExpiresAtUtc)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
 }

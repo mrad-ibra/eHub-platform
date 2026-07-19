@@ -66,6 +66,7 @@ public static class ErrorCodes
     public const string BookingStartDateInPast = nameof(BookingStartDateInPast);
     public const string BookingHoldExpired = nameof(BookingHoldExpired);
     public const string BookingIdempotencyPayloadMismatch = nameof(BookingIdempotencyPayloadMismatch);
+    public const string BookingRequestInProgress = nameof(BookingRequestInProgress);
     public const string BookingDriverNotSupported = nameof(BookingDriverNotSupported);
     public const string BookingDeliveryNotSupported = nameof(BookingDeliveryNotSupported);
     public const string BookingPickupAddressRequired = nameof(BookingPickupAddressRequired);

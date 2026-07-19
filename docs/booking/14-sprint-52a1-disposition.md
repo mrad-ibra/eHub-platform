@@ -16,4 +16,4 @@
 
 ## Next
 
-**Sprint 5.2B — Expire Worker** after 5.2A.1 green on a machine with Docker.
+**Next:** Architect re-review of Sprint 5.2B ([15](15-sprint-52b-expire-worker.md)).

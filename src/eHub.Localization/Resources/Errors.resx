@@ -201,6 +201,9 @@
   <data name="BookingIdempotencyPayloadMismatch" xml:space="preserve">
     <value>Idempotency-Key was reused with a different request payload.</value>
   </data>
+  <data name="BookingRequestInProgress" xml:space="preserve">
+    <value>A booking request with this Idempotency-Key is already being processed. Retry after a short wait.</value>
+  </data>
   <data name="BookingDriverNotSupported" xml:space="preserve">
     <value>This asset does not support driver requests.</value>
   </data>

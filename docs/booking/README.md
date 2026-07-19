@@ -3,8 +3,8 @@
 **Sprint 5.0:** CLOSED — Architecture **APPROVED**  
 **Sprint 5.1:** In-memory + P0 — **APPROVED**  
 **Sprint 5.2A:** EF Persistence Foundation — **APPROVED WITH COMMENTS**  
-**Sprint 5.2A.1:** EXCLUDE + Npgsql mapping + PG tests — see [13](13-sprint-52a-ef-persistence.md), [14](14-sprint-52a1-disposition.md)  
-**Sprint 5.2B:** Expire Worker — next after 5.2A.1  
+**Sprint 5.2A.1:** APPROVED WITH REQUIRED FOLLOW-UPS — see [16](16-sprint-52a1-rereview-disposition.md)  
+**Sprint 5.2B:** Expire Worker + atomic idempotency + CI PG gate — see [15](15-sprint-52b-expire-worker.md)  
 **Production readiness:** NOT APPROVED  
 
 ### Applied after re-review
@@ -13,6 +13,7 @@
 - EF: `CompleteAsync` does not flush; booking + idempotency complete share `SaveChangesAsync`  
 - `EHubDbContext`, Booking mappings, idempotency table, sequence, exclusion constraint migration  
 - Connection string present → EF Booking adapters; empty → InMemory (Sprint 5.1 path)
+- **5.2B:** `ExpirePendingBookings` hosted job, outbox stub, atomic idempotency reclaim, `EHUB_REQUIRE_POSTGRES_TESTS`
 
 ### Architect review focus (going forward)
 

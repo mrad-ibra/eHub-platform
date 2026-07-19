@@ -201,6 +201,9 @@
   <data name="BookingIdempotencyPayloadMismatch" xml:space="preserve">
     <value>Idempotency-Key fərqli sorğu gövdəsi ilə təkrar istifadə olunub.</value>
   </data>
+  <data name="BookingRequestInProgress" xml:space="preserve">
+    <value>Bu Idempotency-Key ilə bron sorğusu artıq emal olunur. Qısa müddət sonra yenidən cəhd edin.</value>
+  </data>
   <data name="BookingDriverNotSupported" xml:space="preserve">
     <value>Bu aktiv sürücü sorğusunu dəstəkləmir.</value>
   </data>
