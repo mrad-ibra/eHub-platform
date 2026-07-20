@@ -13,6 +13,17 @@ public sealed class EfPaymentRepository(EHubDbContext db) : IPaymentRepository
         => Query()
             .FirstOrDefaultAsync(p => p.Id == paymentId, cancellationToken);
 
+    public async Task<Payment?> GetByIdForUpdateAsync(Guid paymentId, CancellationToken cancellationToken = default)
+    {
+        // Row lock serializes parallel refunds on the same payment (AggregateVersion alone can race
+        // under concurrent load when both handlers load before either commits).
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"""SELECT 1 FROM payments WHERE "Id" = {paymentId} FOR UPDATE""",
+            cancellationToken);
+
+        return await GetByIdAsync(paymentId, cancellationToken);
+    }
+
     public Task<Payment?> GetByIdempotencyKeyAsync(string idempotencyKey, CancellationToken cancellationToken = default)
         => Query()
             .FirstOrDefaultAsync(p => p.IdempotencyKey == idempotencyKey, cancellationToken);

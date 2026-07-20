@@ -74,78 +74,87 @@ public sealed class CreateRefundCommandHandler(
         var key = request.IdempotencyKey.Trim();
         var reason = request.Reason.Trim();
 
-        var payment = await payments.GetByIdAsync(request.PaymentId, cancellationToken)
-            ?? throw new NotFoundException(ErrorResources.Get(ErrorCodes.NotFound));
-
-        var existing = payment.FindRefundByIdempotencyKey(key);
-        if (existing is not null)
-        {
-            if (!existing.MatchesIdempotentPayload(request.Amount, payment.Amount.CurrencyId, reason))
-            {
-                throw new ConflictException(ErrorResources.Get(ErrorCodes.PaymentRefundIdempotencyPayloadMismatch));
-            }
-
-            return Map(payment, existing);
-        }
-
-        if (string.IsNullOrWhiteSpace(payment.ProviderPaymentId))
-        {
-            throw new ConflictException(ErrorResources.Get(ErrorCodes.PaymentRefundNotAllowed));
-        }
-
-        var currency = await currencies.GetByIdAsync(payment.Amount.CurrencyId, cancellationToken)
-            ?? throw new NotFoundException(ErrorResources.Get(ErrorCodes.CatalogItemNotFound));
-        if (!minorUnits.IsSupported(currency.Code))
-        {
-            throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.PaymentCurrencyUnsupported));
-        }
-
-        var amount = Money.Create(request.Amount, payment.Amount.CurrencyId);
-        var refund = payment.BeginRefund(amount, reason, key, now, userId);
-
-        foreach (var domainEvent in payment.DomainEvents)
-        {
-            await outbox.EnqueueAsync(domainEvent, now, cancellationToken);
-        }
-
-        payment.ClearDomainEvents();
-
-        var adapter = providerResolver.GetRequired(payment.Provider.Value);
-        var providerResult = await adapter.RefundAsync(
-            new ProviderRefundRequest(
-                payment.ProviderPaymentId,
-                amount.Amount,
-                currency.Code,
-                key,
-                reason),
-            cancellationToken);
-
-        if (providerResult.IsSuccess)
-        {
-            payment.CompleteRefund(refund.Id, providerResult.ProviderRefundId, now);
-        }
-        else
-        {
-            payment.FailRefund(refund.Id, providerResult.Failure.ToDomainCode(), now);
-        }
-
-        foreach (var domainEvent in payment.DomainEvents)
-        {
-            await outbox.EnqueueAsync(domainEvent, now, cancellationToken);
-        }
-
-        payment.ClearDomainEvents();
-
+        CreateRefundResult? result = null;
         try
         {
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+            await unitOfWork.ExecuteInTransactionAsync(async ct =>
+            {
+                // FOR UPDATE serializes parallel partial refunds on the same payment row.
+                var payment = await payments.GetByIdForUpdateAsync(request.PaymentId, ct)
+                    ?? throw new NotFoundException(ErrorResources.Get(ErrorCodes.NotFound));
+
+                var existing = payment.FindRefundByIdempotencyKey(key);
+                if (existing is not null)
+                {
+                    if (!existing.MatchesIdempotentPayload(request.Amount, payment.Amount.CurrencyId, reason))
+                    {
+                        throw new ConflictException(ErrorResources.Get(ErrorCodes.PaymentRefundIdempotencyPayloadMismatch));
+                    }
+
+                    result = Map(payment, existing);
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(payment.ProviderPaymentId))
+                {
+                    throw new ConflictException(ErrorResources.Get(ErrorCodes.PaymentRefundNotAllowed));
+                }
+
+                var currency = await currencies.GetByIdAsync(payment.Amount.CurrencyId, ct)
+                    ?? throw new NotFoundException(ErrorResources.Get(ErrorCodes.CatalogItemNotFound));
+                if (!minorUnits.IsSupported(currency.Code))
+                {
+                    throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.PaymentCurrencyUnsupported));
+                }
+
+                var amount = Money.Create(request.Amount, payment.Amount.CurrencyId);
+                var refund = payment.BeginRefund(amount, reason, key, now, userId);
+
+                foreach (var domainEvent in payment.DomainEvents)
+                {
+                    await outbox.EnqueueAsync(domainEvent, now, ct);
+                }
+
+                payment.ClearDomainEvents();
+
+                var adapter = providerResolver.GetRequired(payment.Provider.Value);
+                var providerResult = await adapter.RefundAsync(
+                    new ProviderRefundRequest(
+                        payment.ProviderPaymentId,
+                        amount.Amount,
+                        currency.Code,
+                        key,
+                        reason),
+                    ct);
+
+                if (providerResult.IsSuccess)
+                {
+                    payment.CompleteRefund(refund.Id, providerResult.ProviderRefundId, now);
+                }
+                else
+                {
+                    payment.FailRefund(refund.Id, providerResult.Failure.ToDomainCode(), now);
+                }
+
+                foreach (var domainEvent in payment.DomainEvents)
+                {
+                    await outbox.EnqueueAsync(domainEvent, now, ct);
+                }
+
+                payment.ClearDomainEvents();
+                await unitOfWork.SaveChangesAsync(ct);
+
+                var settled = payment.Refunds.First(r => r.Id == refund.Id);
+                result = Map(payment, settled);
+            }, cancellationToken);
         }
-        catch (ConflictException)
+        catch (ConflictException ex) when (
+            ex.Message == ErrorResources.Get(ErrorCodes.PaymentRefundAmountInvalid))
         {
-            var reloaded = await payments.GetByIdAsync(payment.Id, cancellationToken)
+            var reloaded = await payments.GetByIdAsync(request.PaymentId, cancellationToken)
                 ?? throw new NotFoundException(ErrorResources.Get(ErrorCodes.NotFound));
             var raced = reloaded.FindRefundByIdempotencyKey(key);
-            if (raced is not null && raced.MatchesIdempotentPayload(request.Amount, payment.Amount.CurrencyId, reason))
+            if (raced is not null && raced.MatchesIdempotentPayload(request.Amount, reloaded.Amount.CurrencyId, reason))
             {
                 return Map(reloaded, raced);
             }
@@ -153,8 +162,7 @@ public sealed class CreateRefundCommandHandler(
             throw;
         }
 
-        var settled = payment.Refunds.First(r => r.Id == refund.Id);
-        return Map(payment, settled);
+        return result ?? throw new InvalidOperationException("CreateRefund completed without a result.");
     }
 
     private static CreateRefundResult Map(Payment payment, Refund refund)

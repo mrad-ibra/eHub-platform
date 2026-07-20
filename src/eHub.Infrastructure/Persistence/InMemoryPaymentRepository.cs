@@ -46,6 +46,9 @@ public sealed class InMemoryPaymentRepository : IPaymentRepository
         return Task.FromResult(payment);
     }
 
+    public Task<Payment?> GetByIdForUpdateAsync(Guid paymentId, CancellationToken cancellationToken = default)
+        => GetByIdAsync(paymentId, cancellationToken);
+
     public Task<Payment?> GetByIdempotencyKeyAsync(string idempotencyKey, CancellationToken cancellationToken = default)
     {
         if (!_byIdempotencyKey.TryGetValue(idempotencyKey, out var id))

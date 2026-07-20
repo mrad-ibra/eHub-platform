@@ -8,6 +8,12 @@ public interface IPaymentRepository
 
     Task<Payment?> GetByIdAsync(Guid paymentId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Loads the payment aggregate and takes a row lock (<c>SELECT … FOR UPDATE</c>) when a
+    /// transaction is open — required for parallel partial-refund correctness.
+    /// </summary>
+    Task<Payment?> GetByIdForUpdateAsync(Guid paymentId, CancellationToken cancellationToken = default);
+
     Task<Payment?> GetByIdempotencyKeyAsync(string idempotencyKey, CancellationToken cancellationToken = default);
 
     /// <summary>Active (non-terminal) payment for a booking, if any.</summary>

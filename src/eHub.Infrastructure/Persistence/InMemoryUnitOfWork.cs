@@ -6,4 +6,9 @@ public sealed class InMemoryUnitOfWork : IUnitOfWork
 {
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         => Task.CompletedTask;
+
+    public Task ExecuteInTransactionAsync(
+        Func<CancellationToken, Task> action,
+        CancellationToken cancellationToken = default)
+        => action(cancellationToken);
 }

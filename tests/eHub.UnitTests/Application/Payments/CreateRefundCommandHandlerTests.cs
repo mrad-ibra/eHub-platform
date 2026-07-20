@@ -43,6 +43,8 @@ public sealed class CreateRefundCommandHandlerTests
         _providerResolver.GetRequired(Arg.Any<string>()).Returns(_provider);
         _currencies.GetByIdAsync(CurrencyId, Arg.Any<CancellationToken>())
             .Returns(Currency.Create("AZN", "Manat", "₼", Now));
+        _uow.ExecuteInTransactionAsync(Arg.Any<Func<CancellationToken, Task>>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => callInfo.ArgAt<Func<CancellationToken, Task>>(0)(callInfo.ArgAt<CancellationToken>(1)));
         _handler = new CreateRefundCommandHandler(
             _currentUser,
             _payments,
@@ -54,11 +56,14 @@ public sealed class CreateRefundCommandHandlerTests
             _uow);
     }
 
+    private void SeedPayment(Payment payment)
+        => _payments.GetByIdForUpdateAsync(payment.Id, Arg.Any<CancellationToken>()).Returns(payment);
+
     [Fact]
     public async Task Handle_PartialRefund_Succeeds_AndEnqueuesOutbox()
     {
         var payment = SucceededPayment();
-        _payments.GetByIdAsync(payment.Id, Arg.Any<CancellationToken>()).Returns(payment);
+        SeedPayment(payment);
 
         var result = await _handler.Handle(
             new CreateRefundCommand(payment.Id, 100m, "partial", "ref-1"),
@@ -80,7 +85,7 @@ public sealed class CreateRefundCommandHandlerTests
     public async Task Handle_FullRefund_SetsPaymentRefunded()
     {
         var payment = SucceededPayment();
-        _payments.GetByIdAsync(payment.Id, Arg.Any<CancellationToken>()).Returns(payment);
+        SeedPayment(payment);
 
         var result = await _handler.Handle(
             new CreateRefundCommand(payment.Id, 250m, "full", "ref-full"),
@@ -95,7 +100,7 @@ public sealed class CreateRefundCommandHandlerTests
     {
         var payment = SucceededPayment();
         payment.AddRefund(Money.Create(50m, CurrencyId), "earlier", Now, AdminId, "re_old", "ref-1");
-        _payments.GetByIdAsync(payment.Id, Arg.Any<CancellationToken>()).Returns(payment);
+        SeedPayment(payment);
 
         var result = await _handler.Handle(
             new CreateRefundCommand(payment.Id, 50m, "earlier", "ref-1"),
@@ -111,7 +116,7 @@ public sealed class CreateRefundCommandHandlerTests
     {
         var payment = SucceededPayment();
         payment.AddRefund(Money.Create(50m, CurrencyId), "earlier", Now, AdminId, "re_old", "ref-1");
-        _payments.GetByIdAsync(payment.Id, Arg.Any<CancellationToken>()).Returns(payment);
+        SeedPayment(payment);
 
         var act = () => _handler.Handle(
             new CreateRefundCommand(payment.Id, 60m, "earlier", "ref-1"),
@@ -125,7 +130,7 @@ public sealed class CreateRefundCommandHandlerTests
     {
         _currentUser.IsInRole("Admin").Returns(false);
         var payment = SucceededPayment();
-        _payments.GetByIdAsync(payment.Id, Arg.Any<CancellationToken>()).Returns(payment);
+        SeedPayment(payment);
 
         var act = () => _handler.Handle(
             new CreateRefundCommand(payment.Id, 10m, "ops", "ref-1"),
@@ -139,7 +144,7 @@ public sealed class CreateRefundCommandHandlerTests
     {
         _currentUser.HasPermission(AuthPolicies.PaymentsRefund).Returns(false);
         var payment = SucceededPayment();
-        _payments.GetByIdAsync(payment.Id, Arg.Any<CancellationToken>()).Returns(payment);
+        SeedPayment(payment);
 
         var act = () => _handler.Handle(
             new CreateRefundCommand(payment.Id, 10m, "ops", "ref-1"),
@@ -159,7 +164,7 @@ public sealed class CreateRefundCommandHandlerTests
             Now);
         payment.MarkPending("fake_prov_1", Now);
         payment.MarkFailed("declined", Now.AddMinutes(1));
-        _payments.GetByIdAsync(payment.Id, Arg.Any<CancellationToken>()).Returns(payment);
+        SeedPayment(payment);
 
         var act = () => _handler.Handle(
             new CreateRefundCommand(payment.Id, 10m, "too late", "ref-1"),
@@ -172,7 +177,7 @@ public sealed class CreateRefundCommandHandlerTests
     public async Task Handle_AmountExceedsRemaining_Rejected()
     {
         var payment = SucceededPayment();
-        _payments.GetByIdAsync(payment.Id, Arg.Any<CancellationToken>()).Returns(payment);
+        SeedPayment(payment);
 
         var act = () => _handler.Handle(
             new CreateRefundCommand(payment.Id, 300m, "too much", "ref-1"),
@@ -191,7 +196,7 @@ public sealed class CreateRefundCommandHandlerTests
                 SafeMessage: "Provider unavailable.",
                 IsRetryable: true)));
         var payment = SucceededPayment();
-        _payments.GetByIdAsync(payment.Id, Arg.Any<CancellationToken>()).Returns(payment);
+        SeedPayment(payment);
 
         var result = await _handler.Handle(
             new CreateRefundCommand(payment.Id, 25m, "retry later", "ref-fail"),

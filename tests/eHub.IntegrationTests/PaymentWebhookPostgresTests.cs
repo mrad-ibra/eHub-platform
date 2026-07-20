@@ -93,8 +93,9 @@ public sealed class PaymentWebhookPostgresTests
         payment.ClearDomainEvents();
         await uow.SaveChangesAsync();
 
+        var eventId = $"pg-evt-ok-{Guid.NewGuid():N}";
         var body = WebhookBody(
-            $"pg-evt-ok-{Guid.NewGuid():N}",
+            eventId,
             "SUCCEEDED",
             payment.Id,
             payment.ProviderPaymentId,
@@ -113,11 +114,15 @@ public sealed class PaymentWebhookPostgresTests
         var loadedPayment = await readDb.Payments.SingleAsync(p => p.Id == payment.Id);
         loadedPayment.Status.Should().Be(PaymentStatusCode.Succeeded);
 
-        var succeededOutbox = await readDb.OutboxMessages
-            .CountAsync(m => m.Type == nameof(PaymentSucceeded) && m.ProcessedAtUtc == null);
+        var paymentIdText = payment.Id.ToString();
+        var succeededOutbox = readDb.OutboxMessages
+            .AsEnumerable()
+            .Count(m => m.Type == nameof(PaymentSucceeded)
+                        && m.ProcessedAtUtc == null
+                        && m.PayloadJson.Contains(paymentIdText, StringComparison.Ordinal));
         succeededOutbox.Should().Be(1);
 
-        var inboxRows = await readDb.PaymentWebhookInbox.CountAsync(x => x.ProviderEventId == "pg-evt-1");
+        var inboxRows = await readDb.PaymentWebhookInbox.CountAsync(x => x.ProviderEventId == eventId);
         inboxRows.Should().Be(1);
 
         await processor.RunOnceAsync();
