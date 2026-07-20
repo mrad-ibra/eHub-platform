@@ -5,9 +5,12 @@
 | Epic | Name | Status |
 |------|------|--------|
 | 1 | [Booking Platform](booking/README.md) | ✅ Complete |
-| 2 | [Payment Platform](payment/README.md) | 6.4 review → **6.5 next** |
+| 2 | [Payment Platform](payment/README.md) | ~95% — **6.5 Phase A next** |
 | 3 | Communication Platform | Planned (7.x) |
-| 4 | Platform Engineering | Backlog (8+) |
+| 4 | Marketplace | Planned (8.x) |
+| 5 | Platform Engineering | Backlog (9.x) |
+| 6 | Admin Platform | Backlog (10.x) |
+| 7 | Production | Backlog (11.x) |
 
 → Full detail: [epics.md](epics.md)
 

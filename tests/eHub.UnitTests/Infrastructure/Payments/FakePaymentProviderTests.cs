@@ -55,6 +55,7 @@ public sealed class FakePaymentProviderTests
         var result = await _provider.CreatePaymentAsync(
             new ProviderCreatePaymentRequest(paymentId, Guid.NewGuid(), 50m, Guid.NewGuid(), "key-1"));
 
+        result.IsSuccess.Should().BeTrue();
         result.ProviderPaymentId.Should().Be($"fake_{paymentId:N}");
         result.RedirectUrl.Should().Contain("fake/checkout");
     }

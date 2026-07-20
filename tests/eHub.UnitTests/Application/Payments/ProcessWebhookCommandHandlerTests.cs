@@ -175,15 +175,17 @@ public sealed class ProcessWebhookCommandHandlerTests
         public Task<ProviderCreatePaymentResult> CreatePaymentAsync(
             ProviderCreatePaymentRequest request,
             CancellationToken cancellationToken = default)
-            => Task.FromResult(new ProviderCreatePaymentResult("x", null));
+            => Task.FromResult(ProviderCreatePaymentResult.Success("x"));
 
-        public Task CancelPaymentAsync(string providerPaymentId, CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
+        public Task<ProviderCancelResult> CancelPaymentAsync(
+            string providerPaymentId,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(ProviderCancelResult.Success());
 
         public Task<ProviderRefundResult> RefundAsync(
             ProviderRefundRequest request,
             CancellationToken cancellationToken = default)
-            => Task.FromResult(new ProviderRefundResult(null, true, null));
+            => Task.FromResult(ProviderRefundResult.Success("re_x"));
 
         public bool VerifyWebhook(
             IReadOnlyDictionary<string, string> headers,

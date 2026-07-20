@@ -19,7 +19,7 @@ Full epic roadmap: [../epics.md](../epics.md)
 | 6.2 | Application + Persistence + API | ✅ |
 | 6.3 | Provider Integration & Webhook Processing | ✅ |
 | **6.4** | **Refund API + workflow** | **READY FOR REVIEW** |
-| **6.5** | **Real providers + contract tests + ACL hardening** | **Next** |
+| **6.5** | **Real providers + contract tests + ACL hardening** | **IN PROGRESS — Phase 0 ✅** |
 | 7.x | Communication Platform (Epic 3) | Planned |
 | 8+ | Platform Engineering (Epic 4) | When needed |
 

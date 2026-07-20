@@ -110,13 +110,13 @@ public sealed class CreateRefundCommandHandler(
                 reason),
             cancellationToken);
 
-        if (providerResult.Succeeded)
+        if (providerResult.IsSuccess)
         {
             payment.CompleteRefund(refund.Id, providerResult.ProviderRefundId, now);
         }
         else
         {
-            payment.FailRefund(refund.Id, providerResult.FailureReason, now);
+            payment.FailRefund(refund.Id, providerResult.Failure.ToDomainCode(), now);
         }
 
         foreach (var domainEvent in payment.DomainEvents)

@@ -8,7 +8,7 @@ public interface IPaymentProvider
         ProviderCreatePaymentRequest request,
         CancellationToken cancellationToken = default);
 
-    Task CancelPaymentAsync(
+    Task<ProviderCancelResult> CancelPaymentAsync(
         string providerPaymentId,
         CancellationToken cancellationToken = default);
 
@@ -39,8 +39,17 @@ public sealed record ProviderCreatePaymentRequest(
     string IdempotencyKey);
 
 public sealed record ProviderCreatePaymentResult(
-    string ProviderPaymentId,
-    string? RedirectUrl);
+    bool IsSuccess,
+    string? ProviderPaymentId,
+    string? RedirectUrl,
+    ProviderFailure? Failure)
+{
+    public static ProviderCreatePaymentResult Success(string providerPaymentId, string? redirectUrl = null)
+        => new(true, providerPaymentId, redirectUrl, null);
+
+    public static ProviderCreatePaymentResult Failed(ProviderFailure failure)
+        => new(false, null, null, failure);
+}
 
 public sealed record ProviderRefundRequest(
     string ProviderPaymentId,
@@ -50,9 +59,25 @@ public sealed record ProviderRefundRequest(
     string Reason);
 
 public sealed record ProviderRefundResult(
+    bool IsSuccess,
     string? ProviderRefundId,
-    bool Succeeded,
-    string? FailureReason);
+    ProviderFailure? Failure)
+{
+    public static ProviderRefundResult Success(string providerRefundId)
+        => new(true, providerRefundId, null);
+
+    public static ProviderRefundResult Failed(ProviderFailure failure)
+        => new(false, null, failure);
+}
+
+public sealed record ProviderCancelResult(
+    bool IsSuccess,
+    ProviderFailure? Failure)
+{
+    public static ProviderCancelResult Success() => new(true, null);
+
+    public static ProviderCancelResult Failed(ProviderFailure failure) => new(false, failure);
+}
 
 public enum ProviderWebhookOutcome
 {

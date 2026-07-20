@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -19,28 +20,35 @@ public sealed class FakePaymentProvider(IOptions<PaymentProviderOptions> options
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
+    private readonly ConcurrentDictionary<string, string> _createByIdempotency = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, string> _refundByIdempotency = new(StringComparer.Ordinal);
+
     public string ProviderKey => PaymentProviderCodes.Test;
 
     public Task<ProviderCreatePaymentResult> CreatePaymentAsync(
         ProviderCreatePaymentRequest request,
         CancellationToken cancellationToken = default)
     {
-        var id = $"fake_{request.PaymentId:N}";
-        return Task.FromResult(new ProviderCreatePaymentResult(
+        var key = request.IdempotencyKey.Trim();
+        var id = _createByIdempotency.GetOrAdd(key, _ => $"fake_{request.PaymentId:N}");
+        return Task.FromResult(ProviderCreatePaymentResult.Success(
             id,
-            RedirectUrl: $"https://payments.ehub.local/fake/checkout/{id}"));
+            $"https://payments.ehub.local/fake/checkout/{id}"));
     }
 
-    public Task CancelPaymentAsync(string providerPaymentId, CancellationToken cancellationToken = default)
-        => Task.CompletedTask;
+    public Task<ProviderCancelResult> CancelPaymentAsync(
+        string providerPaymentId,
+        CancellationToken cancellationToken = default)
+        => Task.FromResult(ProviderCancelResult.Success());
 
     public Task<ProviderRefundResult> RefundAsync(
         ProviderRefundRequest request,
         CancellationToken cancellationToken = default)
-        => Task.FromResult(new ProviderRefundResult(
-            ProviderRefundId: $"re_{Guid.NewGuid():N}",
-            Succeeded: true,
-            FailureReason: null));
+    {
+        var key = request.IdempotencyKey.Trim();
+        var refundId = _refundByIdempotency.GetOrAdd(key, _ => $"re_{Guid.NewGuid():N}");
+        return Task.FromResult(ProviderRefundResult.Success(refundId));
+    }
 
     public bool VerifyWebhook(
         IReadOnlyDictionary<string, string> headers,
@@ -110,7 +118,6 @@ public sealed class FakePaymentProvider(IOptions<PaymentProviderOptions> options
 
         if (outcome == ProviderWebhookOutcome.Unknown)
         {
-            // Safe ack path: known envelope, unknown type.
             return new ProviderWebhookEvent(
                 dto.EventId.Trim(),
                 dto.ProviderPaymentId,

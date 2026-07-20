@@ -5,6 +5,7 @@ using eHub.Application.Common.Time;
 using eHub.Application.Identity.Authorization;
 using eHub.Application.Payments.Abstractions;
 using eHub.Application.Payments.Commands.CreateRefund;
+using eHub.Application.Payments;
 using eHub.Domain.Common;
 using eHub.Domain.Exceptions;
 using eHub.Domain.Payments;
@@ -34,7 +35,7 @@ public sealed class CreateRefundCommandHandlerTests
         _currentUser.IsInRole("Admin").Returns(true);
         _clock.UtcNow.Returns(Now);
         _provider.RefundAsync(Arg.Any<ProviderRefundRequest>(), Arg.Any<CancellationToken>())
-            .Returns(new ProviderRefundResult("re_test_1", Succeeded: true, FailureReason: null));
+            .Returns(ProviderRefundResult.Success("re_test_1"));
         _providerResolver.GetRequired(Arg.Any<string>()).Returns(_provider);
         _handler = new CreateRefundCommandHandler(
             _currentUser,
@@ -176,7 +177,11 @@ public sealed class CreateRefundCommandHandlerTests
     public async Task Handle_ProviderFailure_MarksRefundFailed()
     {
         _provider.RefundAsync(Arg.Any<ProviderRefundRequest>(), Arg.Any<CancellationToken>())
-            .Returns(new ProviderRefundResult(null, Succeeded: false, FailureReason: "provider_down"));
+            .Returns(ProviderRefundResult.Failed(new ProviderFailure(
+                PaymentFailureReason.ProviderUnavailable,
+                ProviderCode: "provider_down",
+                SafeMessage: "Provider unavailable.",
+                IsRetryable: true)));
         var payment = SucceededPayment();
         _payments.GetByIdAsync(payment.Id, Arg.Any<CancellationToken>()).Returns(payment);
 

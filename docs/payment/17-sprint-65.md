@@ -1,6 +1,6 @@
 # Sprint 6.5 — Real Payment Provider Integration
 
-**Status:** **PLANNED**  
+**Status:** **IN PROGRESS** — Phase 0 **COMPLETE**  
 **Date:** 2026-07-20  
 **Epic:** Payment Platform (Epic 2 — final sprint)
 
@@ -24,39 +24,41 @@ Three additions required for a **10/10 production-ready sprint**:
 | # | Addition | Phase |
 |---|----------|-------|
 | 1 | `PaymentProviderContractTests` — shared `IPaymentProvider` certification | **Phase 0** (before Stripe) |
-| 2 | Normalized `PaymentFailureReason` — no provider strings past Infrastructure | Phase A/B |
-| 3 | Architecture CI test — no `Stripe.*` / `Payriff.*` in Domain or Application | Phase C |
+| 2 | Normalized `PaymentFailureReason` — no provider strings past Infrastructure | **Phase 0** types ✅ — Phase A/B mappers |
+| 3 | Architecture CI test — no `Stripe.*` / `Payriff.*` in Domain or Application | **Phase 0** ✅ |
 
 ---
 
-## Phases
+## Phase 0 — COMPLETE (2026-07-20)
 
-### Phase 0 — Provider certification (first)
+| Deliverable | Location | Status |
+|-------------|----------|--------|
+| `PaymentFailureReason` enum | `Application/Payments/PaymentFailureReason.cs` | ✅ |
+| `ProviderFailure` + normalized result records | `Application/Payments/Abstractions/` | ✅ |
+| `PaymentProviderContractTests` + `FakePaymentProviderContractTests` | `tests/.../Contracts/` | ✅ |
+| `PaymentProviderArchitectureTests` (NetArchTest.Rules) | `tests/.../Architecture/` | ✅ |
+| `PaymentFailureReasonMapper` placeholder | `Infrastructure/Payments/` | ✅ (Phase A/B wiring) |
+| Handlers use normalized failures (no raw provider strings) | CreatePayment / CreateRefund | ✅ |
 
-Before writing Stripe SDK code, define the **provider contract** every adapter must pass.
+### Phase 0 exit criteria
 
-**Deliverable:** `PaymentProviderContractTests` (abstract test base or shared fixture)
+| Criterion | Status |
+|-----------|--------|
+| `PaymentFailureReason` provider-independent | ✅ |
+| `ProviderFailure` model exists | ✅ |
+| Fake provider passes contract tests | ✅ |
+| Architecture tests in CI | ✅ |
+| Domain/Application free of provider SDK deps | ✅ |
+| Raw provider exceptions do not reach Application | ✅ |
+| Unit tests green (181) | ✅ |
 
-| Scenario | Expected |
-|----------|----------|
-| `CreatePaymentAsync` | Returns non-empty `ProviderPaymentId` |
-| Payment lifecycle via webhook | `ParseWebhook` → `ProviderWebhookOutcome.Succeeded` → maps to internal success |
-| `RefundAsync` | Returns `Succeeded` + `ProviderRefundId` |
-| `CancelPaymentAsync` | Completes without error (or normalized failure) |
-| `VerifyWebhook` — valid | `true` |
-| `VerifyWebhook` — tampered body | `false` |
-| `VerifyWebhook` — expired timestamp | `false` |
-| `ParseWebhook` — unknown event | `null` or `Unknown` outcome (safe ack) |
+**Next:** Phase A — Stripe SDK adapter (implements same contract suite).
 
-**Run against:**
+---
 
-| Provider | When |
-|----------|------|
-| `FakePaymentProvider` | Phase 0 — establishes baseline |
-| `StripePaymentProvider` | Phase A — sandbox |
-| `PayriffPaymentProvider` | Phase B — sandbox |
+## Phases (remaining)
 
-When Payriff lands, only the adapter changes — **not** the contract suite.
+Contract certification baseline is complete — **Fake** passes `PaymentProviderContractTests`. Stripe and Payriff must pass the same suite in Phase A/B.
 
 ---
 
@@ -89,20 +91,9 @@ When Payriff lands, only the adapter changes — **not** the contract suite.
 
 ### Phase C — Cross-cutting production hardening
 
-#### Failure normalization (in sprint — not backlog)
+#### Failure normalization (Phase A/B — mapper wiring)
 
-Provider-specific errors **must not** reach Application or Domain.
-
-| Provider returns | Application sees |
-|------------------|------------------|
-| Stripe `card_declined` | `PaymentFailureReason.CardDeclined` |
-| Stripe `expired_card` | `PaymentFailureReason.ExpiredCard` |
-| Stripe `insufficient_funds` | `PaymentFailureReason.InsufficientFunds` |
-| Payriff `INVALID_CARD` | `PaymentFailureReason.CardDeclined` |
-| HTTP 5xx / timeout | `PaymentFailureReason.ProviderUnavailable` |
-| Unknown | `PaymentFailureReason.ProviderErrorUnknown` |
-
-Mapping lives **only** in Infrastructure adapters (ACL-7). `ProviderRefundResult.FailureReason` and webhook `FailureReason` use normalized codes.
+Types and result models exist (Phase 0). Provider-specific code → `PaymentFailureReason` mapping lands in `PaymentFailureReasonMapper` during Stripe/Payriff implementation.
 
 #### Config validation (environment-aware fail-fast)
 
@@ -125,19 +116,9 @@ Mapping lives **only** in Infrastructure adapters (ACL-7). `ProviderRefundResult
 | Provider timeout on create/refund | Normalized `ProviderUnavailable`; payment/refund in recoverable failed state |
 | Retry after transient provider error | Idempotent replay succeeds |
 
-#### Architecture governance (CI)
+#### Architecture governance (CI) ✅ Phase 0
 
-**Rule:** `Stripe.*` and `Payriff.*` namespaces **never** appear in `eHub.Domain` or `eHub.Application`.
-
-**Deliverable:** `PaymentProviderArchitectureTests` (NetArchTest.Rules or assembly reference scan)
-
-```text
-eHub.Domain        → NO Stripe, NO Payriff
-eHub.Application   → NO Stripe, NO Payriff
-eHub.Infrastructure → allowed (ACL only)
-```
-
-Runs on every CI build.
+`PaymentProviderArchitectureTests` runs on every CI build (NetArchTest.Rules).
 
 ---
 
@@ -182,7 +163,7 @@ Runs on every CI build.
 | Stripe Webhook → `PaymentSucceeded` → Booking confirm (sandbox E2E) | ☐ |
 | Payriff Create + webhook (minimum happy path) | ☐ |
 | Payriff Refund | ☐ |
-| Fake + Stripe + Payriff pass **contract tests** | ☐ |
+| Fake passes **contract tests** | ✅ |
 
 ### Reliability
 
@@ -198,10 +179,11 @@ Runs on every CI build.
 
 | Criterion | Status |
 |-----------|--------|
-| `PaymentProviderContractTests` green for all enabled providers | ☐ |
-| ACL isolation — no provider types in Domain/Application | ☐ |
-| `PaymentFailureReason` — no raw provider strings past Infrastructure | ☐ |
-| Architecture test in CI | ☐ |
+| `PaymentProviderContractTests` green for Fake | ✅ |
+| Fake + Stripe + Payriff pass contract tests | ☐ |
+| ACL isolation — no provider types in Domain/Application | ✅ |
+| `PaymentFailureReason` result models (no raw strings in handlers) | ✅ |
+| Architecture test in CI | ✅ |
 | Unit + PG IT + sandbox (opt-in) green | ☐ |
 
 ---

@@ -37,7 +37,9 @@ public sealed class CreatePaymentCommandHandlerTests
         _currentUser.RequireUserId().Returns(RenterId);
         _clock.UtcNow.Returns(Now);
         _provider.CreatePaymentAsync(Arg.Any<ProviderCreatePaymentRequest>(), Arg.Any<CancellationToken>())
-            .Returns(new ProviderCreatePaymentResult(ProviderPaymentId, "https://payments.ehub.local/fake/checkout"));
+            .Returns(ProviderCreatePaymentResult.Success(
+                ProviderPaymentId,
+                "https://payments.ehub.local/fake/checkout"));
         _providerResolver.GetRequired(Arg.Any<string>()).Returns(_provider);
         _handler = new CreatePaymentCommandHandler(
             _currentUser,

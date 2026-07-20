@@ -15,8 +15,10 @@ public abstract class PaymentProviderSkeletonBase : IPaymentProvider
         CancellationToken cancellationToken = default)
         => Task.FromException<ProviderCreatePaymentResult>(NotWired(nameof(CreatePaymentAsync)));
 
-    public Task CancelPaymentAsync(string providerPaymentId, CancellationToken cancellationToken = default)
-        => Task.FromException(NotWired(nameof(CancelPaymentAsync)));
+    public Task<ProviderCancelResult> CancelPaymentAsync(
+        string providerPaymentId,
+        CancellationToken cancellationToken = default)
+        => Task.FromException<ProviderCancelResult>(NotWired(nameof(CancelPaymentAsync)));
 
     public Task<ProviderRefundResult> RefundAsync(
         ProviderRefundRequest request,

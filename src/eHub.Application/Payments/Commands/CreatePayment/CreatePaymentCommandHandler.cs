@@ -102,7 +102,23 @@ public sealed class CreatePaymentCommandHandler(
                 payment.IdempotencyKey),
             cancellationToken);
 
-        payment.MarkPending(created.ProviderPaymentId, now);
+        if (!created.IsSuccess)
+        {
+            payment.MarkFailed(created.Failure.ToDomainCode(), now);
+
+            foreach (var domainEvent in payment.DomainEvents)
+            {
+                await outbox.EnqueueAsync(domainEvent, now, cancellationToken);
+            }
+
+            payment.ClearDomainEvents();
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            var detail = created.Failure?.SafeMessage ?? created.Failure.ToDomainCode();
+            throw new ConflictException(detail);
+        }
+
+        payment.MarkPending(created.ProviderPaymentId!, now);
 
         foreach (var domainEvent in payment.DomainEvents)
         {
