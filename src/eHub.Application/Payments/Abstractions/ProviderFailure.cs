@@ -14,5 +14,7 @@ public sealed record ProviderFailure(
 public static class ProviderFailureExtensions
 {
     public static string ToDomainCode(this ProviderFailure? failure)
-        => failure?.Reason.ToString() ?? PaymentFailureReason.Unknown.ToString();
+        => failure?.Reason is { } reason
+            ? PaymentFailureCodes.ToStableCode(reason)
+            : PaymentFailureCodes.ToStableCode(PaymentFailureReason.Unknown);
 }

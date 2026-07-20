@@ -1,3 +1,5 @@
+using eHub.Application.Payments;
+
 namespace eHub.Application.Payments.Abstractions;
 
 public interface IPaymentProvider
@@ -38,46 +40,12 @@ public sealed record ProviderCreatePaymentRequest(
     Guid CurrencyId,
     string IdempotencyKey);
 
-public sealed record ProviderCreatePaymentResult(
-    bool IsSuccess,
-    string? ProviderPaymentId,
-    string? RedirectUrl,
-    ProviderFailure? Failure)
-{
-    public static ProviderCreatePaymentResult Success(string providerPaymentId, string? redirectUrl = null)
-        => new(true, providerPaymentId, redirectUrl, null);
-
-    public static ProviderCreatePaymentResult Failed(ProviderFailure failure)
-        => new(false, null, null, failure);
-}
-
 public sealed record ProviderRefundRequest(
     string ProviderPaymentId,
     decimal Amount,
     Guid CurrencyId,
     string IdempotencyKey,
     string Reason);
-
-public sealed record ProviderRefundResult(
-    bool IsSuccess,
-    string? ProviderRefundId,
-    ProviderFailure? Failure)
-{
-    public static ProviderRefundResult Success(string providerRefundId)
-        => new(true, providerRefundId, null);
-
-    public static ProviderRefundResult Failed(ProviderFailure failure)
-        => new(false, null, failure);
-}
-
-public sealed record ProviderCancelResult(
-    bool IsSuccess,
-    ProviderFailure? Failure)
-{
-    public static ProviderCancelResult Success() => new(true, null);
-
-    public static ProviderCancelResult Failed(ProviderFailure failure) => new(false, failure);
-}
 
 public enum ProviderWebhookOutcome
 {
@@ -96,6 +64,6 @@ public sealed record ProviderWebhookEvent(
     ProviderWebhookOutcome Outcome,
     decimal? Amount,
     Guid? CurrencyId,
-    string? FailureReason,
+    PaymentFailureReason? FailureReason,
     decimal? RefundAmount,
     DateTime OccurredAtUtc);

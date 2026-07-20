@@ -1,6 +1,6 @@
 # Sprint 6.5 — Real Payment Provider Integration
 
-**Status:** **IN PROGRESS** — Phase 0 **COMPLETE**  
+**Status:** **IN PROGRESS** — Phase 0 **CLOSED** (review fixes applied)  
 **Date:** 2026-07-20  
 **Epic:** Payment Platform (Epic 2 — final sprint)
 
@@ -40,17 +40,25 @@ Three additions required for a **10/10 production-ready sprint**:
 | `PaymentFailureReasonMapper` placeholder | `Infrastructure/Payments/` | ✅ (Phase A/B wiring) |
 | Handlers use normalized failures (no raw provider strings) | CreatePayment / CreateRefund | ✅ |
 
+| `PaymentFailureCodes` stable domain codes | `Application/Payments/PaymentFailureCodes.cs` | ✅ |
+| Provider-independent contract hooks (webhook signing) | `PaymentProviderContractTests` abstract hooks | ✅ |
+| Idempotency payload mismatch (create/refund) | `FakePaymentProvider` + contract tests | ✅ |
+| Webhook `PaymentFailureReason?` (no raw strings) | `ProviderWebhookEvent` + mapper | ✅ |
+| Enabled-only provider DI + production fail-fast | `PaymentProviderRegistration` | ✅ |
+| Inbox + payment single transaction + lease reclaim | `EfPaymentWebhookInboxStore` + handler | ✅ |
+| Factory-only provider result types | `ProviderOperationResults.cs` | ✅ |
+
 ### Phase 0 exit criteria
 
 | Criterion | Status |
 |-----------|--------|
 | `PaymentFailureReason` provider-independent | ✅ |
 | `ProviderFailure` model exists | ✅ |
-| Fake provider passes contract tests | ✅ |
-| Architecture tests in CI | ✅ |
+| Fake provider passes contract tests (10 scenarios) | ✅ |
+| Architecture tests in CI (+ csproj package guard) | ✅ |
 | Domain/Application free of provider SDK deps | ✅ |
-| Raw provider exceptions do not reach Application | ✅ |
-| Unit tests green (181) | ✅ |
+| Raw provider strings do not reach Application/Domain | ✅ |
+| Unit tests green (186) | ✅ |
 
 **Next:** Phase A — Stripe SDK adapter (implements same contract suite).
 

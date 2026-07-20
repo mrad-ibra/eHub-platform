@@ -15,5 +15,6 @@ public enum PaymentFailureReason
     ProviderUnavailable,
     Timeout,
     RateLimited,
-    InvalidRequest
+    InvalidRequest,
+    IdempotencyPayloadMismatch
 }

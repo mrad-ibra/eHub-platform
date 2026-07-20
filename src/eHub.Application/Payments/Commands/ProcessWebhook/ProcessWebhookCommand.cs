@@ -3,6 +3,8 @@ using eHub.Application.Bookings.Abstractions;
 using eHub.Application.Common.Messaging;
 using eHub.Application.Common.Persistence;
 using eHub.Application.Common.Time;
+using eHub.Application.Configuration;
+using eHub.Application.Payments;
 using eHub.Application.Payments.Abstractions;
 using eHub.Domain.Common;
 using eHub.Domain.Exceptions;
@@ -93,6 +95,7 @@ public sealed class ProcessWebhookCommandHandler(
                 now,
                 "unknown_event_type",
                 cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
             return new ProcessWebhookResult(true, "ignored", "Unknown event type acknowledged.");
         }
 
@@ -120,6 +123,7 @@ public sealed class ProcessWebhookCommandHandler(
                 now,
                 "payment_not_found",
                 cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
             return new ProcessWebhookResult(true, "payment_not_found", "Recorded; no payment matched.");
         }
 
@@ -132,7 +136,6 @@ public sealed class ProcessWebhookCommandHandler(
             }
 
             payment.ClearDomainEvents();
-            await unitOfWork.SaveChangesAsync(cancellationToken);
             await inbox.CompleteAsync(
                 provider.ProviderKey,
                 parsed.EventId,
@@ -141,6 +144,7 @@ public sealed class ProcessWebhookCommandHandler(
                 now,
                 null,
                 cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
             return new ProcessWebhookResult(true, "processed");
         }
         catch (ConflictException ex)
@@ -150,7 +154,6 @@ public sealed class ProcessWebhookCommandHandler(
                 now,
                 parsed.ProviderPaymentId,
                 ex.Message);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
             await inbox.CompleteAsync(
                 provider.ProviderKey,
                 parsed.EventId,
@@ -159,6 +162,7 @@ public sealed class ProcessWebhookCommandHandler(
                 now,
                 "illegal_transition",
                 cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
             return new ProcessWebhookResult(true, "ignored_transition", ex.Message);
         }
     }
@@ -182,7 +186,9 @@ public sealed class ProcessWebhookCommandHandler(
                 payment.MarkSucceeded(parsed.OccurredAtUtc, parsed.ProviderPaymentId);
                 break;
             case ProviderWebhookOutcome.Failed:
-                payment.MarkFailed(parsed.FailureReason ?? "provider_failed", now);
+                payment.MarkFailed(
+                    PaymentFailureCodes.ToStableCode(parsed.FailureReason ?? PaymentFailureReason.Unknown),
+                    now);
                 break;
             case ProviderWebhookOutcome.Cancelled:
                 payment.MarkCancelled(now);

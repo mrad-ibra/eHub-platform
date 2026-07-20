@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using eHub.Application.Configuration;
 using eHub.Application.Payments.Abstractions;
 
 namespace eHub.Infrastructure.Persistence;
@@ -9,8 +10,10 @@ public sealed class InMemoryPaymentWebhookInboxStore : IPaymentWebhookInboxStore
     {
         public Guid? PaymentId { get; set; }
         public string Status { get; set; } = PaymentWebhookInboxStatuses.Received;
+        public DateTime ReceivedAtUtc { get; set; }
         public DateTime? ProcessedAtUtc { get; set; }
         public string? FailureReason { get; set; }
+        public string PayloadHash { get; set; } = string.Empty;
     }
 
     private readonly ConcurrentDictionary<string, Row> _rows = new(StringComparer.Ordinal);
@@ -21,7 +24,37 @@ public sealed class InMemoryPaymentWebhookInboxStore : IPaymentWebhookInboxStore
         string payloadHash,
         DateTime nowUtc,
         CancellationToken cancellationToken = default)
-        => Task.FromResult(_rows.TryAdd(Key(provider, providerEventId), new Row()));
+    {
+        var key = Key(provider, providerEventId);
+
+        if (_rows.TryGetValue(key, out var existing))
+        {
+            if (IsTerminal(existing.Status))
+            {
+                return Task.FromResult(false);
+            }
+
+            if (existing.Status == PaymentWebhookInboxStatuses.Received)
+            {
+                if (nowUtc - existing.ReceivedAtUtc <= PaymentWebhookInboxOptions.ProcessingLease)
+                {
+                    return Task.FromResult(false);
+                }
+
+                existing.ReceivedAtUtc = nowUtc;
+                existing.PayloadHash = payloadHash;
+                return Task.FromResult(true);
+            }
+
+            return Task.FromResult(false);
+        }
+
+        return Task.FromResult(_rows.TryAdd(key, new Row
+        {
+            ReceivedAtUtc = nowUtc,
+            PayloadHash = payloadHash
+        }));
+    }
 
     public Task CompleteAsync(
         string provider,
@@ -42,6 +75,11 @@ public sealed class InMemoryPaymentWebhookInboxStore : IPaymentWebhookInboxStore
 
         return Task.CompletedTask;
     }
+
+    private static bool IsTerminal(string status)
+        => status is PaymentWebhookInboxStatuses.Processed
+            or PaymentWebhookInboxStatuses.Ignored
+            or PaymentWebhookInboxStatuses.Failed;
 
     private static string Key(string provider, string eventId) => $"{provider}|{eventId}";
 }

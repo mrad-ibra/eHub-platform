@@ -20,8 +20,8 @@ public sealed class FakePaymentProvider(IOptions<PaymentProviderOptions> options
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    private readonly ConcurrentDictionary<string, string> _createByIdempotency = new(StringComparer.Ordinal);
-    private readonly ConcurrentDictionary<string, string> _refundByIdempotency = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, StoredCreate> _createByIdempotency = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, StoredRefund> _refundByIdempotency = new(StringComparer.Ordinal);
 
     public string ProviderKey => PaymentProviderCodes.Test;
 
@@ -29,24 +29,56 @@ public sealed class FakePaymentProvider(IOptions<PaymentProviderOptions> options
         ProviderCreatePaymentRequest request,
         CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var key = request.IdempotencyKey.Trim();
-        var id = _createByIdempotency.GetOrAdd(key, _ => $"fake_{request.PaymentId:N}");
-        return Task.FromResult(ProviderCreatePaymentResult.Success(
-            id,
-            $"https://payments.ehub.local/fake/checkout/{id}"));
+        var fingerprint = CreateFingerprint.From(request);
+
+        if (_createByIdempotency.TryGetValue(key, out var stored))
+        {
+            if (!stored.Fingerprint.Equals(fingerprint))
+            {
+                return Task.FromResult(ProviderCreatePaymentResult.Failed(IdempotencyMismatch()));
+            }
+
+            return Task.FromResult(ProviderCreatePaymentResult.Success(
+                stored.ProviderPaymentId,
+                stored.RedirectUrl));
+        }
+
+        var id = $"fake_{request.PaymentId:N}";
+        var redirect = $"https://payments.ehub.local/fake/checkout/{id}";
+        _createByIdempotency[key] = new StoredCreate(id, redirect, fingerprint);
+        return Task.FromResult(ProviderCreatePaymentResult.Success(id, redirect));
     }
 
     public Task<ProviderCancelResult> CancelPaymentAsync(
         string providerPaymentId,
         CancellationToken cancellationToken = default)
-        => Task.FromResult(ProviderCancelResult.Success());
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(ProviderCancelResult.Success());
+    }
 
     public Task<ProviderRefundResult> RefundAsync(
         ProviderRefundRequest request,
         CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var key = request.IdempotencyKey.Trim();
-        var refundId = _refundByIdempotency.GetOrAdd(key, _ => $"re_{Guid.NewGuid():N}");
+        var fingerprint = RefundFingerprint.From(request);
+
+        if (_refundByIdempotency.TryGetValue(key, out var stored))
+        {
+            if (!stored.Fingerprint.Equals(fingerprint))
+            {
+                return Task.FromResult(ProviderRefundResult.Failed(IdempotencyMismatch()));
+            }
+
+            return Task.FromResult(ProviderRefundResult.Success(stored.ProviderRefundId));
+        }
+
+        var refundId = $"re_{Guid.NewGuid():N}";
+        _refundByIdempotency[key] = new StoredRefund(refundId, fingerprint);
         return Task.FromResult(ProviderRefundResult.Success(refundId));
     }
 
@@ -106,6 +138,10 @@ public sealed class FakePaymentProvider(IOptions<PaymentProviderOptions> options
             return null;
         }
 
+        var failureReason = dto.FailureReason is null
+            ? (PaymentFailureReason?)null
+            : PaymentFailureReasonMapper.MapFakeWebhookFailure(dto.FailureReason);
+
         var outcome = dto.Outcome?.Trim().ToUpperInvariant() switch
         {
             "AUTHORIZED" => ProviderWebhookOutcome.Authorized,
@@ -116,20 +152,6 @@ public sealed class FakePaymentProvider(IOptions<PaymentProviderOptions> options
             _ => ProviderWebhookOutcome.Unknown
         };
 
-        if (outcome == ProviderWebhookOutcome.Unknown)
-        {
-            return new ProviderWebhookEvent(
-                dto.EventId.Trim(),
-                dto.ProviderPaymentId,
-                dto.PaymentId,
-                ProviderWebhookOutcome.Unknown,
-                dto.Amount,
-                dto.CurrencyId,
-                dto.FailureReason,
-                dto.RefundAmount,
-                dto.OccurredAtUtc ?? DateTime.UtcNow);
-        }
-
         return new ProviderWebhookEvent(
             dto.EventId.Trim(),
             dto.ProviderPaymentId,
@@ -137,13 +159,20 @@ public sealed class FakePaymentProvider(IOptions<PaymentProviderOptions> options
             outcome,
             dto.Amount,
             dto.CurrencyId,
-            dto.FailureReason,
+            failureReason,
             dto.RefundAmount,
             dto.OccurredAtUtc ?? DateTime.UtcNow);
     }
 
     public static string Sign(string secret, long unixTimestamp, string body)
         => ComputeHmacHex(secret, $"{unixTimestamp}.{body}");
+
+    private static ProviderFailure IdempotencyMismatch()
+        => new(
+            PaymentFailureReason.IdempotencyPayloadMismatch,
+            ProviderCode: null,
+            SafeMessage: null,
+            IsRetryable: false);
 
     private static string ComputeHmacHex(string secret, string payload)
     {
@@ -171,6 +200,33 @@ public sealed class FakePaymentProvider(IOptions<PaymentProviderOptions> options
         value = string.Empty;
         return false;
     }
+
+    private sealed record CreateFingerprint(Guid PaymentId, Guid BookingId, decimal Amount, Guid CurrencyId)
+    {
+        public static CreateFingerprint From(ProviderCreatePaymentRequest request)
+            => new(request.PaymentId, request.BookingId, request.Amount, request.CurrencyId);
+    }
+
+    private sealed record RefundFingerprint(
+        string ProviderPaymentId,
+        decimal Amount,
+        Guid CurrencyId,
+        string Reason)
+    {
+        public static RefundFingerprint From(ProviderRefundRequest request)
+            => new(
+                request.ProviderPaymentId.Trim(),
+                request.Amount,
+                request.CurrencyId,
+                request.Reason.Trim());
+    }
+
+    private sealed record StoredCreate(
+        string ProviderPaymentId,
+        string RedirectUrl,
+        CreateFingerprint Fingerprint);
+
+    private sealed record StoredRefund(string ProviderRefundId, RefundFingerprint Fingerprint);
 
     private sealed class FakeWebhookDto
     {

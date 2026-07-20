@@ -141,7 +141,7 @@ public sealed class ProcessWebhookCommandHandlerTests
 
         result.Code.Should().Be("processed");
         payment.Status.Should().Be(PaymentStatusCode.Failed);
-        payment.FailureReason.Should().Be("declined");
+        payment.FailureReason.Should().Be(PaymentFailureCodes.ToStableCode(PaymentFailureReason.CardDeclined));
     }
 
     [Fact]

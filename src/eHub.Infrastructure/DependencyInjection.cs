@@ -18,6 +18,7 @@ using eHub.Infrastructure.Time;
 using eHub.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace eHub.Infrastructure;
 
@@ -25,10 +26,10 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         services.Configure<JobsOptions>(configuration.GetSection(JobsOptions.SectionName));
-        services.Configure<PaymentProviderOptions>(configuration.GetSection(PaymentProviderOptions.SectionName));
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
@@ -42,10 +43,7 @@ public static class DependencyInjection
         services.AddSingleton<BookingAvailabilityService>();
         services.AddSingleton<IBookingExpiryNotifier, LoggingBookingExpiryNotifier>();
         services.AddSingleton<IExpireBookingsMetrics, LoggingExpireBookingsMetrics>();
-        services.AddSingleton<IPaymentProvider, FakePaymentProvider>();
-        services.AddSingleton<IPaymentProvider, StripePaymentProvider>();
-        services.AddSingleton<IPaymentProvider, PayriffPaymentProvider>();
-        services.AddSingleton<IPaymentProviderResolver, PaymentProviderResolver>();
+        services.AddPaymentProviders(configuration, environment);
         AddCatalogRepositories(services);
         services.AddHostedService<AuthSeedHostedService>();
         services.AddHostedService<CatalogSeedHostedService>();

@@ -114,8 +114,8 @@ public sealed class CreatePaymentCommandHandler(
             payment.ClearDomainEvents();
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
-            var detail = created.Failure?.SafeMessage ?? created.Failure.ToDomainCode();
-            throw new ConflictException(detail);
+            throw new ConflictException(
+                PaymentFailureCodes.ToStableCode(created.Failure?.Reason ?? PaymentFailureReason.Unknown));
         }
 
         payment.MarkPending(created.ProviderPaymentId!, now);

@@ -18,7 +18,7 @@ try
     builder.AddEHubSerilog();
     builder.AddEHubObservability();
     builder.Services.AddApplication(builder.Configuration);
-    builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
     builder.Services.AddEHubProblemDetails();
     builder.Services.AddEHubHealthChecks(builder.Configuration);
     builder.Services.AddEHubVersioning();
