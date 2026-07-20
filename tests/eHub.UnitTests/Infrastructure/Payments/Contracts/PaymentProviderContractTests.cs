@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 namespace eHub.UnitTests.Infrastructure.Payments.Contracts;
 
 /// <summary>
-/// Shared certification suite — every <see cref="IPaymentProvider"/> adapter must pass (Phase 0).
+/// Shared certification suite — every <see cref="IPaymentProvider"/> adapter must pass (Phase 0/A).
 /// Webhook signing is provider-specific; concrete tests supply headers via hooks.
 /// </summary>
 public abstract class PaymentProviderContractTests
@@ -41,7 +41,7 @@ public abstract class PaymentProviderContractTests
                 paymentId,
                 Guid.NewGuid(),
                 10m,
-                Guid.NewGuid(),
+                "AZN",
                 $"create-{Guid.NewGuid():N}"));
 
         result.IsSuccess.Should().BeTrue();
@@ -59,7 +59,7 @@ public abstract class PaymentProviderContractTests
             paymentId,
             Guid.NewGuid(),
             10m,
-            Guid.NewGuid(),
+            "AZN",
             idempotencyKey);
 
         var first = await provider.CreatePaymentAsync(request);
@@ -80,14 +80,14 @@ public abstract class PaymentProviderContractTests
                 Guid.NewGuid(),
                 Guid.NewGuid(),
                 10m,
-                Guid.NewGuid(),
+                "AZN",
                 idempotencyKey));
         var second = await provider.CreatePaymentAsync(
             new ProviderCreatePaymentRequest(
                 Guid.NewGuid(),
                 Guid.NewGuid(),
                 99m,
-                Guid.NewGuid(),
+                "AZN",
                 idempotencyKey));
 
         first.IsSuccess.Should().BeTrue();
@@ -99,13 +99,12 @@ public abstract class PaymentProviderContractTests
     public async Task Refund_WithValidAmount_ReturnsSuccess()
     {
         var provider = CreateProvider();
-        var paymentId = Guid.NewGuid();
         var create = await provider.CreatePaymentAsync(
             new ProviderCreatePaymentRequest(
-                paymentId,
+                Guid.NewGuid(),
                 Guid.NewGuid(),
                 25m,
-                Guid.NewGuid(),
+                "AZN",
                 $"refund-setup-{Guid.NewGuid():N}"));
 
         create.IsSuccess.Should().BeTrue();
@@ -114,7 +113,7 @@ public abstract class PaymentProviderContractTests
             new ProviderRefundRequest(
                 create.ProviderPaymentId!,
                 25m,
-                Guid.NewGuid(),
+                "AZN",
                 $"refund-{Guid.NewGuid():N}",
                 "contract_test"));
 
@@ -132,15 +131,15 @@ public abstract class PaymentProviderContractTests
                 Guid.NewGuid(),
                 Guid.NewGuid(),
                 50m,
-                Guid.NewGuid(),
+                "AZN",
                 $"refund-mismatch-setup-{Guid.NewGuid():N}"));
         create.IsSuccess.Should().BeTrue();
 
         const string key = "contract-idem-refund-mismatch";
         var first = await provider.RefundAsync(
-            new ProviderRefundRequest(create.ProviderPaymentId!, 10m, Guid.NewGuid(), key, "a"));
+            new ProviderRefundRequest(create.ProviderPaymentId!, 10m, "AZN", key, "a"));
         var second = await provider.RefundAsync(
-            new ProviderRefundRequest(create.ProviderPaymentId!, 20m, Guid.NewGuid(), key, "b"));
+            new ProviderRefundRequest(create.ProviderPaymentId!, 20m, "AZN", key, "b"));
 
         first.IsSuccess.Should().BeTrue();
         second.IsSuccess.Should().BeFalse();
@@ -156,7 +155,7 @@ public abstract class PaymentProviderContractTests
                 Guid.NewGuid(),
                 Guid.NewGuid(),
                 15m,
-                Guid.NewGuid(),
+                "AZN",
                 $"cancel-setup-{Guid.NewGuid():N}"));
 
         create.IsSuccess.Should().BeTrue();
@@ -205,6 +204,7 @@ public sealed class FakePaymentProviderContractTests : PaymentProviderContractTe
     {
         Fake = new FakeProviderOptions
         {
+            Enabled = true,
             WebhookSecret = "contract-test-secret",
             TimestampToleranceSeconds = 300
         }

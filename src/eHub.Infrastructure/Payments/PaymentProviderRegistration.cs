@@ -1,6 +1,7 @@
 using eHub.Application.Configuration;
 using eHub.Application.Payments;
 using eHub.Application.Payments.Abstractions;
+using eHub.Infrastructure.Payments.Providers.Stripe;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,22 +20,22 @@ internal static class PaymentProviderRegistration
         var options = configuration.GetSection(PaymentProviderOptions.SectionName).Get<PaymentProviderOptions>()
             ?? new PaymentProviderOptions();
 
-        services.AddSingleton<IPaymentProvider, FakePaymentProvider>();
-
-        if (options.Stripe.Enabled)
+        if (environment.IsProduction() && options.Fake.Enabled)
         {
-            ValidateEnabledProviderSecrets(
-                environment,
-                PaymentProviderCodes.Stripe,
-                options.Stripe.ApiKey,
-                options.Stripe.WebhookSecret);
-            services.AddSingleton<IPaymentProvider, StripePaymentProvider>();
+            throw new InvalidOperationException(
+                "Payments:Providers:Fake.Enabled must be false in Production.");
         }
+
+        if (!environment.IsProduction() && options.Fake.Enabled)
+        {
+            services.AddSingleton<IPaymentProvider, FakePaymentProvider>();
+        }
+
+        services.AddStripePaymentProvider(configuration, environment);
 
         if (options.Payriff.Enabled)
         {
-            ValidateEnabledProviderSecrets(
-                environment,
+            ValidateEnabledSecrets(
                 PaymentProviderCodes.Payriff,
                 options.Payriff.SecretKey,
                 options.Payriff.WebhookSecret);
@@ -45,21 +46,12 @@ internal static class PaymentProviderRegistration
         return services;
     }
 
-    private static void ValidateEnabledProviderSecrets(
-        IHostEnvironment environment,
-        string providerKey,
-        string primarySecret,
-        string webhookSecret)
+    private static void ValidateEnabledSecrets(string providerKey, string primarySecret, string webhookSecret)
     {
-        if (!environment.IsProduction())
-        {
-            return;
-        }
-
         if (string.IsNullOrWhiteSpace(primarySecret) || string.IsNullOrWhiteSpace(webhookSecret))
         {
             throw new InvalidOperationException(
-                $"Payments:Providers:{providerKey} is enabled in Production but required secrets are missing. " +
+                $"Payments:Providers:{providerKey} is enabled but required secrets are missing. " +
                 "Disable the provider or supply credentials before startup.");
         }
     }

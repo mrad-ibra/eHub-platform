@@ -201,23 +201,23 @@ public sealed class FakePaymentProvider(IOptions<PaymentProviderOptions> options
         return false;
     }
 
-    private sealed record CreateFingerprint(Guid PaymentId, Guid BookingId, decimal Amount, Guid CurrencyId)
+    private sealed record CreateFingerprint(Guid PaymentId, Guid BookingId, decimal Amount, string CurrencyCode)
     {
         public static CreateFingerprint From(ProviderCreatePaymentRequest request)
-            => new(request.PaymentId, request.BookingId, request.Amount, request.CurrencyId);
+            => new(request.PaymentId, request.BookingId, request.Amount, request.CurrencyCode.Trim().ToUpperInvariant());
     }
 
     private sealed record RefundFingerprint(
         string ProviderPaymentId,
         decimal Amount,
-        Guid CurrencyId,
+        string CurrencyCode,
         string Reason)
     {
         public static RefundFingerprint From(ProviderRefundRequest request)
             => new(
                 request.ProviderPaymentId.Trim(),
                 request.Amount,
-                request.CurrencyId,
+                request.CurrencyCode.Trim().ToUpperInvariant(),
                 request.Reason.Trim());
     }
 

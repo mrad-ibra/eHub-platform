@@ -1,4 +1,5 @@
 using eHub.Application.Bookings.Abstractions;
+using eHub.Application.Catalog.Abstractions;
 using eHub.Application.Common.Context;
 using eHub.Application.Common.Persistence;
 using eHub.Application.Common.Time;
@@ -6,6 +7,7 @@ using eHub.Application.Identity.Authorization;
 using eHub.Application.Payments.Abstractions;
 using eHub.Application.Payments.Commands.CreateRefund;
 using eHub.Application.Payments;
+using eHub.Domain.Catalog;
 using eHub.Domain.Common;
 using eHub.Domain.Exceptions;
 using eHub.Domain.Payments;
@@ -21,6 +23,8 @@ public sealed class CreateRefundCommandHandlerTests
 
     private readonly ICurrentUser _currentUser = Substitute.For<ICurrentUser>();
     private readonly IPaymentRepository _payments = Substitute.For<IPaymentRepository>();
+    private readonly ICurrencyRepository _currencies = Substitute.For<ICurrencyRepository>();
+    private readonly IMinorUnitConverter _minorUnits = new MinorUnitConverter();
     private readonly IPaymentProviderResolver _providerResolver = Substitute.For<IPaymentProviderResolver>();
     private readonly IPaymentProvider _provider = Substitute.For<IPaymentProvider>();
     private readonly IOutboxWriter _outbox = Substitute.For<IOutboxWriter>();
@@ -37,9 +41,13 @@ public sealed class CreateRefundCommandHandlerTests
         _provider.RefundAsync(Arg.Any<ProviderRefundRequest>(), Arg.Any<CancellationToken>())
             .Returns(ProviderRefundResult.Success("re_test_1"));
         _providerResolver.GetRequired(Arg.Any<string>()).Returns(_provider);
+        _currencies.GetByIdAsync(CurrencyId, Arg.Any<CancellationToken>())
+            .Returns(Currency.Create("AZN", "Manat", "₼", Now));
         _handler = new CreateRefundCommandHandler(
             _currentUser,
             _payments,
+            _currencies,
+            _minorUnits,
             _providerResolver,
             _outbox,
             _clock,

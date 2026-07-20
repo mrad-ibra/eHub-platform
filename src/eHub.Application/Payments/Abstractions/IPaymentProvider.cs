@@ -37,13 +37,13 @@ public sealed record ProviderCreatePaymentRequest(
     Guid PaymentId,
     Guid BookingId,
     decimal Amount,
-    Guid CurrencyId,
+    string CurrencyCode,
     string IdempotencyKey);
 
 public sealed record ProviderRefundRequest(
     string ProviderPaymentId,
     decimal Amount,
-    Guid CurrencyId,
+    string CurrencyCode,
     string IdempotencyKey,
     string Reason);
 

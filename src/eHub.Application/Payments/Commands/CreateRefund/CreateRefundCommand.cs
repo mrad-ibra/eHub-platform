@@ -1,4 +1,5 @@
 using eHub.Application.Bookings.Abstractions;
+using eHub.Application.Catalog.Abstractions;
 using eHub.Application.Common.Context;
 using eHub.Application.Common.Messaging;
 using eHub.Application.Common.Persistence;
@@ -47,6 +48,8 @@ public sealed class CreateRefundCommandValidator : AbstractValidator<CreateRefun
 public sealed class CreateRefundCommandHandler(
     ICurrentUser currentUser,
     IPaymentRepository payments,
+    ICurrencyRepository currencies,
+    IMinorUnitConverter minorUnits,
     IPaymentProviderResolver providerResolver,
     IOutboxWriter outbox,
     IClock clock,
@@ -90,6 +93,13 @@ public sealed class CreateRefundCommandHandler(
             throw new ConflictException(ErrorResources.Get(ErrorCodes.PaymentRefundNotAllowed));
         }
 
+        var currency = await currencies.GetByIdAsync(payment.Amount.CurrencyId, cancellationToken)
+            ?? throw new NotFoundException(ErrorResources.Get(ErrorCodes.CatalogItemNotFound));
+        if (!minorUnits.IsSupported(currency.Code))
+        {
+            throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.PaymentCurrencyUnsupported));
+        }
+
         var amount = Money.Create(request.Amount, payment.Amount.CurrencyId);
         var refund = payment.BeginRefund(amount, reason, key, now, userId);
 
@@ -105,7 +115,7 @@ public sealed class CreateRefundCommandHandler(
             new ProviderRefundRequest(
                 payment.ProviderPaymentId,
                 amount.Amount,
-                amount.CurrencyId,
+                currency.Code,
                 key,
                 reason),
             cancellationToken);

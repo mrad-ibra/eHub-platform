@@ -285,4 +285,7 @@
   <data name="PaymentTestProviderNotAllowed" xml:space="preserve">
     <value>The TEST payment provider is not allowed in this environment.</value>
   </data>
+  <data name="PaymentCurrencyUnsupported" xml:space="preserve">
+    <value>The payment currency is not supported by the provider.</value>
+  </data>
 </root>

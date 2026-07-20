@@ -95,4 +95,5 @@ public static class ErrorCodes
     public const string PaymentIdempotencyKeyRequired = nameof(PaymentIdempotencyKeyRequired);
     public const string PaymentProviderRequired = nameof(PaymentProviderRequired);
     public const string PaymentTestProviderNotAllowed = nameof(PaymentTestProviderNotAllowed);
+    public const string PaymentCurrencyUnsupported = nameof(PaymentCurrencyUnsupported);
 }

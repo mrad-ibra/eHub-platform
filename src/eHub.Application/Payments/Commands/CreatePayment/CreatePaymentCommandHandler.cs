@@ -1,4 +1,5 @@
 using eHub.Application.Bookings.Abstractions;
+using eHub.Application.Catalog.Abstractions;
 using eHub.Application.Common.Context;
 using eHub.Application.Common.Messaging;
 using eHub.Application.Common.Persistence;
@@ -36,6 +37,8 @@ public sealed class CreatePaymentCommandHandler(
     ICurrentUser currentUser,
     IBookingRepository bookings,
     IPaymentRepository payments,
+    ICurrencyRepository currencies,
+    IMinorUnitConverter minorUnits,
     IPaymentProviderResolver providerResolver,
     IOutboxWriter outbox,
     IClock clock,
@@ -83,6 +86,13 @@ public sealed class CreatePaymentCommandHandler(
             throw new ConflictException(ErrorResources.Get(ErrorCodes.PaymentActiveAlreadyExists));
         }
 
+        var currency = await currencies.GetByIdAsync(booking.TotalPrice.CurrencyId, cancellationToken)
+            ?? throw new NotFoundException(ErrorResources.Get(ErrorCodes.CatalogItemNotFound));
+        if (!minorUnits.IsSupported(currency.Code))
+        {
+            throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.PaymentCurrencyUnsupported));
+        }
+
         var adapter = providerResolver.GetRequired(providerCode.Value);
         var payment = Payment.Create(
             booking.Id,
@@ -98,7 +108,7 @@ public sealed class CreatePaymentCommandHandler(
                 payment.Id,
                 payment.BookingId,
                 payment.Amount.Amount,
-                payment.Amount.CurrencyId,
+                currency.Code,
                 payment.IdempotencyKey),
             cancellationToken);
 

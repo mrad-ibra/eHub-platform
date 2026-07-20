@@ -285,4 +285,7 @@
   <data name="PaymentTestProviderNotAllowed" xml:space="preserve">
     <value>TEST payment provider bu mühitdə icazə verilmir.</value>
   </data>
+  <data name="PaymentCurrencyUnsupported" xml:space="preserve">
+    <value>Ödəniş valyutası provider tərəfindən dəstəklənmir.</value>
+  </data>
 </root>

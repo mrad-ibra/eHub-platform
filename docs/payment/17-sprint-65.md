@@ -1,6 +1,6 @@
 # Sprint 6.5 — Real Payment Provider Integration
 
-**Status:** **IN PROGRESS** — Phase 0 **CLOSED** (review fixes applied)  
+**Status:** **IN PROGRESS** — Phase 0 **CLOSED** · Phase A **IN PROGRESS** (Stripe Checkout Session ACL)  
 **Date:** 2026-07-20  
 **Epic:** Payment Platform (Epic 2 — final sprint)
 
@@ -60,7 +60,23 @@ Three additions required for a **10/10 production-ready sprint**:
 | Raw provider strings do not reach Application/Domain | ✅ |
 | Unit tests green (186) | ✅ |
 
-**Next:** Phase A — Stripe SDK adapter (implements same contract suite).
+**Next:** Phase A — Stripe Checkout Session adapter (behavior tests green; sandbox opt-in remaining).
+
+### Phase A progress (2026-07-20)
+
+| Item | Status |
+|------|--------|
+| Folder layout `Providers/Stripe|Fake|Payriff` + `Common/` | ✅ |
+| `Stripe.net` (Infrastructure only) | ✅ |
+| Checkout Session create + RedirectUrl | ✅ |
+| Idempotency key → Stripe `RequestOptions` | ✅ |
+| Refund via PaymentIntent + cancel/expire session | ✅ |
+| `StripeWebhookVerifier` + `StripeWebhookParser` | ✅ |
+| `CurrencyCode` on provider requests + `IMinorUnitConverter` (AZN/USD/EUR) | ✅ |
+| Enabled-only DI; Fake off in Production; Enabled→secrets fail-fast | ✅ |
+| Mocked Stripe behavior tests | ✅ |
+| Opt-in Stripe sandbox IT | ☐ |
+| Polly retry/CB | ☐ Phase C |
 
 ---
 

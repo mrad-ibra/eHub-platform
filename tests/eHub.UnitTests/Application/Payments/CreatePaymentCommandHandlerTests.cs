@@ -1,11 +1,14 @@
-using eHub.Application.Bookings.Abstractions;
+﻿using eHub.Application.Bookings.Abstractions;
+using eHub.Application.Catalog.Abstractions;
 using eHub.Application.Common.Context;
 using eHub.Application.Common.Persistence;
 using eHub.Application.Common.Time;
 using eHub.Application.Configuration;
+using eHub.Application.Payments;
 using eHub.Application.Payments.Abstractions;
 using eHub.Application.Payments.Commands.CreatePayment;
 using eHub.Domain.Bookings;
+using eHub.Domain.Catalog;
 using eHub.Domain.Common;
 using eHub.Domain.Exceptions;
 using eHub.Domain.Payments;
@@ -25,6 +28,8 @@ public sealed class CreatePaymentCommandHandlerTests
     private readonly ICurrentUser _currentUser = Substitute.For<ICurrentUser>();
     private readonly IBookingRepository _bookings = Substitute.For<IBookingRepository>();
     private readonly IPaymentRepository _payments = Substitute.For<IPaymentRepository>();
+    private readonly ICurrencyRepository _currencies = Substitute.For<ICurrencyRepository>();
+    private readonly IMinorUnitConverter _minorUnits = new MinorUnitConverter();
     private readonly IPaymentProviderResolver _providerResolver = Substitute.For<IPaymentProviderResolver>();
     private readonly IPaymentProvider _provider = Substitute.For<IPaymentProvider>();
     private readonly IOutboxWriter _outbox = Substitute.For<IOutboxWriter>();
@@ -41,10 +46,14 @@ public sealed class CreatePaymentCommandHandlerTests
                 ProviderPaymentId,
                 "https://payments.ehub.local/fake/checkout"));
         _providerResolver.GetRequired(Arg.Any<string>()).Returns(_provider);
+        _currencies.GetByIdAsync(CurrencyId, Arg.Any<CancellationToken>())
+            .Returns(Currency.Create("AZN", "Manat", "₼", Now));
         _handler = new CreatePaymentCommandHandler(
             _currentUser,
             _bookings,
             _payments,
+            _currencies,
+            _minorUnits,
             _providerResolver,
             _outbox,
             _clock,
@@ -133,6 +142,8 @@ public sealed class CreatePaymentCommandHandlerTests
             _currentUser,
             _bookings,
             _payments,
+            _currencies,
+            _minorUnits,
             _providerResolver,
             _outbox,
             _clock,

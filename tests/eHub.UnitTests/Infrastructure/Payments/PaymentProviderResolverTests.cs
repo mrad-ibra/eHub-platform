@@ -1,17 +1,47 @@
+using eHub.Application.Configuration;
 using eHub.Application.Payments;
 using eHub.Application.Payments.Abstractions;
 using eHub.Infrastructure.Payments;
+using eHub.Infrastructure.Payments.Providers.Stripe;
+using Microsoft.Extensions.Options;
+using NSubstitute;
 
 namespace eHub.UnitTests.Infrastructure.Payments;
 
 public sealed class PaymentProviderResolverTests
 {
-    private readonly PaymentProviderResolver _resolver = new([
-        new FakePaymentProvider(Microsoft.Extensions.Options.Options.Create(
-            new eHub.Application.Configuration.PaymentProviderOptions())),
-        new StripePaymentProvider(),
-        new PayriffPaymentProvider()
-    ]);
+    private readonly PaymentProviderResolver _resolver;
+
+    public PaymentProviderResolverTests()
+    {
+        var options = Options.Create(new PaymentProviderOptions
+        {
+            Stripe = new StripeProviderOptions
+            {
+                Enabled = true,
+                ApiKey = "sk_test",
+                WebhookSecret = "whsec_test",
+                SuccessUrl = "https://ok.example/{PAYMENT_ID}",
+                CancelUrl = "https://cancel.example/{PAYMENT_ID}"
+            }
+        });
+
+        var gateway = Substitute.For<IStripeGateway>();
+        var verifier = new StripeWebhookVerifier(gateway, options);
+        var parser = new StripeWebhookParser(new MinorUnitConverter());
+        var stripe = new StripePaymentProvider(
+            gateway,
+            verifier,
+            parser,
+            new MinorUnitConverter(),
+            options);
+
+        _resolver = new PaymentProviderResolver([
+            new FakePaymentProvider(Options.Create(new PaymentProviderOptions())),
+            stripe,
+            new PayriffPaymentProvider()
+        ]);
+    }
 
     [Theory]
     [InlineData(PaymentProviderCodes.Test, typeof(FakePaymentProvider))]
@@ -29,26 +59,5 @@ public sealed class PaymentProviderResolverTests
     {
         var act = () => _resolver.GetRequired("UNKNOWN");
         act.Should().Throw<eHub.Domain.Exceptions.NotFoundException>();
-    }
-}
-
-public sealed class PaymentProviderSkeletonTests
-{
-    [Fact]
-    public async Task StripeSkeleton_CreatePayment_ThrowsNotWired()
-    {
-        var provider = new StripePaymentProvider();
-        var act = () => provider.CreatePaymentAsync(
-            new ProviderCreatePaymentRequest(Guid.NewGuid(), Guid.NewGuid(), 10m, Guid.NewGuid(), "key"),
-            CancellationToken.None);
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*STRIPE*not yet wired*");
-    }
-
-    [Fact]
-    public void StripeSkeleton_VerifyWebhook_ReturnsFalse()
-    {
-        var provider = new StripePaymentProvider();
-        provider.VerifyWebhook(new Dictionary<string, string>(), [] , DateTime.UtcNow).Should().BeFalse();
     }
 }

@@ -31,6 +31,7 @@ public static class DependencyInjection
         services.Configure<PaymentsOptions>(configuration.GetSection(PaymentsOptions.SectionName));
 
         services.AddSingleton<IAuthorizationCatalog, AuthorizationCatalog>();
+        services.AddSingleton<eHub.Application.Payments.Abstractions.IMinorUnitConverter, Payments.MinorUnitConverter>();
         services.AddScoped<IAuthSessionFactory, AuthSessionFactory>();
         services.AddScoped<IEmailVerificationService, EmailVerificationService>();
         services.AddScoped<IPasswordResetService, PasswordResetService>();

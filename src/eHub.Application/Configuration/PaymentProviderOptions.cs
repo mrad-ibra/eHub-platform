@@ -9,17 +9,22 @@ public sealed class PaymentProviderOptions
     public PayriffProviderOptions Payriff { get; set; } = new();
 }
 
-public sealed class FakeProviderOptions
-{
-    public string WebhookSecret { get; set; } = "ehub-fake-webhook-secret-change-me";
-    public int TimestampToleranceSeconds { get; set; } = 300;
-}
-
 public sealed class StripeProviderOptions
 {
     public bool Enabled { get; set; }
     public string ApiKey { get; set; } = string.Empty;
     public string WebhookSecret { get; set; } = string.Empty;
+    public string SuccessUrl { get; set; } = string.Empty;
+    public string CancelUrl { get; set; } = string.Empty;
+    public int WebhookToleranceSeconds { get; set; } = 300;
+}
+
+public sealed class FakeProviderOptions
+{
+    /// <summary>When false, Fake/TEST adapter is not registered (production should leave this false).</summary>
+    public bool Enabled { get; set; } = true;
+    public string WebhookSecret { get; set; } = "ehub-fake-webhook-secret-change-me";
+    public int TimestampToleranceSeconds { get; set; } = 300;
 }
 
 public sealed class PayriffProviderOptions

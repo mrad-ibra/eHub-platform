@@ -53,7 +53,7 @@ public sealed class FakePaymentProviderTests
     {
         var paymentId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var result = await _provider.CreatePaymentAsync(
-            new ProviderCreatePaymentRequest(paymentId, Guid.NewGuid(), 50m, Guid.NewGuid(), "key-1"));
+            new ProviderCreatePaymentRequest(paymentId, Guid.NewGuid(), 50m, "AZN", "key-1"));
 
         result.IsSuccess.Should().BeTrue();
         result.ProviderPaymentId.Should().Be($"fake_{paymentId:N}");
