@@ -86,6 +86,27 @@ Provider-independent payment integration and webhook processing — **without** 
 - **Incomplete inbox (`Received`):** Retries reclaim and reprocess.
 - **Late success (L4):** Consumer catches `ConflictException`; booking stays terminal.
 
+## Architect review (v19) — residual checks
+
+| Check | Verdict |
+|-------|---------|
+| `payments.*` permissions | ✅ Fixed (not `bookings.create`) |
+| Webhook endpoint + raw body | ✅ |
+| Webhook inbox idempotency | ✅ `PaymentWebhookInbox` + `TryBeginAsync` |
+| Unknown provider → **404** | ✅ Controller maps `unknown_provider` → `NotFound` |
+| Invalid signature → **401** | ✅ Controller maps `invalid_signature` → `Unauthorized` |
+| Duplicate / ignored → **200** | ✅ `Ok({ received: true, code })` |
+| Stripe/Payriff signature | 🟡 **Skeleton** — `VerifyWebhook` → `false` (401); real HMAC in Sprint 6.4+ / provider sprint |
+| `ParseWebhook` must not 500 | ✅ Handler catches provider exceptions → `unparseable` (200) |
+| Inbox stuck after crash | 🟡 Non-blocker — status `Received` is reclaimable on retry; reconciliation worker backlog |
+| Provider resolver | ✅ `ConcurrentDictionary` lookup (not switch) |
+| Outbox → `Booking.Confirm` | ✅ `PaymentOutboxProcessor` |
+| Redis | ⏭️ Infra/health only; no app features yet |
+
+Payriff real integration should follow provider docs (e.g. Kapital Bank PG API) in a dedicated adapter sprint — skeleton is routing-only today.
+
+**Architect conclusion (v19):** No critical blockers; architecture near production-ready. Next: real Stripe/Payriff verification, Refund API, notifications.
+
 ## Handoff
 
 → **Sprint 6.4** — Refund API + partial/full refund + late-success auto-refund path.

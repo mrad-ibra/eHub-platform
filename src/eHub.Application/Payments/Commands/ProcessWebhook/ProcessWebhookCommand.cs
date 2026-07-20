@@ -55,7 +55,17 @@ public sealed class ProcessWebhookCommandHandler(
             return new ProcessWebhookResult(false, "invalid_signature", "Signature or timestamp invalid.");
         }
 
-        var parsed = provider.ParseWebhook(request.RawBody);
+        ProviderWebhookEvent? parsed;
+        try
+        {
+            parsed = provider.ParseWebhook(request.RawBody);
+        }
+        catch
+        {
+            // Provider must not take down the endpoint; treat as safe ack (L6 follow-up: log).
+            parsed = null;
+        }
+
         if (parsed is null)
         {
             return new ProcessWebhookResult(true, "unparseable", "Acknowledged without effect.");

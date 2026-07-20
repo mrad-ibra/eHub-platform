@@ -145,6 +145,57 @@ public sealed class ProcessWebhookCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ParseWebhookThrows_ReturnsUnparseableNot500()
+    {
+        var resolver = new PaymentProviderResolver([new ThrowingParsePaymentProvider()]);
+        var handler = new ProcessWebhookCommandHandler(
+            resolver,
+            _inbox,
+            _payments,
+            _outbox,
+            _clock,
+            _uow);
+
+        var body = WebhookBody("evt-throw", "SUCCEEDED");
+        var result = await handler.Handle(
+            new ProcessWebhookCommand(
+                PaymentProviderCodes.Test,
+                SignedHeaders(body),
+                Encoding.UTF8.GetBytes(body)),
+            CancellationToken.None);
+
+        result.Code.Should().Be("unparseable");
+        result.Accepted.Should().BeTrue();
+    }
+
+    private sealed class ThrowingParsePaymentProvider : IPaymentProvider
+    {
+        public string ProviderKey => PaymentProviderCodes.Test;
+
+        public Task<ProviderCreatePaymentResult> CreatePaymentAsync(
+            ProviderCreatePaymentRequest request,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(new ProviderCreatePaymentResult("x", null));
+
+        public Task CancelPaymentAsync(string providerPaymentId, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
+        public Task<ProviderRefundResult> RefundAsync(
+            ProviderRefundRequest request,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(new ProviderRefundResult(null, true, null));
+
+        public bool VerifyWebhook(
+            IReadOnlyDictionary<string, string> headers,
+            ReadOnlySpan<byte> rawBody,
+            DateTime nowUtc)
+            => true;
+
+        public ProviderWebhookEvent? ParseWebhook(ReadOnlySpan<byte> rawBody)
+            => throw new InvalidOperationException("bad payload");
+    }
+
+    [Fact]
     public async Task Handle_UnknownEventType_IsAcknowledgedSafely()
     {
         var body = WebhookBody("evt-7", "WEIRD_EVENT");
