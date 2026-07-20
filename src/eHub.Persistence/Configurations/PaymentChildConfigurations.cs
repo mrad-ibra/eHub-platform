@@ -10,6 +10,8 @@ public sealed class PaymentTimelineEntryConfiguration : IEntityTypeConfiguration
     {
         builder.ToTable("payment_timeline_entries");
         builder.HasKey(x => x.Id);
+        // Client-assigned Guids: without this, DetectChanges treats new children as Modified (EF Core 3+).
+        builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.Code).HasMaxLength(64).IsRequired();
         builder.Property(x => x.Message).HasMaxLength(2000).IsRequired();
         builder.Property(x => x.ActorId);
@@ -25,6 +27,7 @@ public sealed class PaymentStatusHistoryEntryConfiguration : IEntityTypeConfigur
     {
         builder.ToTable("payment_status_history");
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.FromStatus).HasMaxLength(64);
         builder.Property(x => x.ToStatus).HasMaxLength(64).IsRequired();
         builder.Property(x => x.Reason).HasMaxLength(PaymentDefaults.MaxFailureReasonLength);
@@ -42,6 +45,7 @@ public sealed class PaymentAttemptConfiguration : IEntityTypeConfiguration<Payme
     {
         builder.ToTable("payment_attempts");
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.Kind).HasMaxLength(32).IsRequired();
         builder.Property(x => x.Result).HasMaxLength(32).IsRequired();
         builder.Property(x => x.ProviderReference).HasMaxLength(PaymentDefaults.MaxProviderPaymentIdLength);
@@ -58,6 +62,7 @@ public sealed class RefundConfiguration : IEntityTypeConfiguration<Refund>
     {
         builder.ToTable("payment_refunds");
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
 
         builder.OwnsOne(x => x.Amount, money =>
         {

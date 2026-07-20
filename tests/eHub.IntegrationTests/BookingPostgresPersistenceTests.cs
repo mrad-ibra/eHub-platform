@@ -323,16 +323,23 @@ public sealed class BookingPostgresPersistenceTests
 
         await using (var db = _fixture.CreateDbContext())
         {
-            var holds = await new EfBookingRepository(db, expireClock)
-                .ListExpiredHoldsAsync(expireClock.UtcNow, 10);
+            var holds = (await new EfBookingRepository(db, expireClock)
+                    .ListExpiredHoldsAsync(expireClock.UtcNow, 100))
+                .Where(h => h.AssetId == assetId)
+                .ToList();
             holds.Should().HaveCount(1);
+            var holdId = holds[0].Id;
             holds[0].Expire(expireClock.UtcNow);
             await new EfOutboxWriter(db).EnqueueAsync(holds[0].DomainEvents.First(), expireClock.UtcNow);
             holds[0].ClearDomainEvents();
             await db.SaveChangesAsync();
 
-            var outboxCount = await db.OutboxMessages.CountAsync();
-            outboxCount.Should().Be(1);
+            var holdIdText = holdId.ToString();
+            var outboxForHold = db.OutboxMessages
+                .AsEnumerable()
+                .Count(o => o.Type == "BookingExpired"
+                            && o.PayloadJson.Contains(holdIdText, StringComparison.Ordinal));
+            outboxForHold.Should().Be(1);
         }
 
         await using (var db = _fixture.CreateDbContext())

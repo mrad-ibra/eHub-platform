@@ -10,6 +10,7 @@ public sealed class PaymentWebhookInboxConfiguration : IEntityTypeConfiguration<
     {
         builder.ToTable("payment_webhook_inbox");
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.Provider).HasMaxLength(32).IsRequired();
         builder.Property(x => x.ProviderEventId).HasMaxLength(256).IsRequired();
         builder.Property(x => x.PayloadHash).HasMaxLength(128).IsRequired();

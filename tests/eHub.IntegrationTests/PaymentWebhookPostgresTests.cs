@@ -93,7 +93,12 @@ public sealed class PaymentWebhookPostgresTests
         payment.ClearDomainEvents();
         await uow.SaveChangesAsync();
 
-        var body = WebhookBody("pg-evt-1", "SUCCEEDED", payment.Id, payment.ProviderPaymentId);
+        var body = WebhookBody(
+            $"pg-evt-ok-{Guid.NewGuid():N}",
+            "SUCCEEDED",
+            payment.Id,
+            payment.ProviderPaymentId,
+            amount: payment.Amount.Amount);
         var first = await webhook.Handle(
             new ProcessWebhookCommand(PaymentProviderCodes.Test, SignedHeaders(body), Encoding.UTF8.GetBytes(body)),
             CancellationToken.None);
@@ -135,7 +140,7 @@ public sealed class PaymentWebhookPostgresTests
         var processor = scope.ServiceProvider.GetRequiredService<PaymentOutboxProcessor>();
         var uow = scope.ServiceProvider.GetRequiredService<EfUnitOfWork>();
 
-        var booking = InstantBook();
+        var booking = InstantBook(createdAtUtc: Now.AddHours(-1));
         booking.Expire(Now);
         await bookings.AddAsync(booking, Now);
 
@@ -150,7 +155,12 @@ public sealed class PaymentWebhookPostgresTests
         payment.ClearDomainEvents();
         await uow.SaveChangesAsync();
 
-        var body = WebhookBody("pg-evt-late", "SUCCEEDED", payment.Id, payment.ProviderPaymentId);
+        var body = WebhookBody(
+            $"pg-evt-late-{Guid.NewGuid():N}",
+            "SUCCEEDED",
+            payment.Id,
+            payment.ProviderPaymentId,
+            amount: payment.Amount.Amount);
         var result = await webhook.Handle(
             new ProcessWebhookCommand(PaymentProviderCodes.Test, SignedHeaders(body), Encoding.UTF8.GetBytes(body)),
             CancellationToken.None);
@@ -189,7 +199,13 @@ public sealed class PaymentWebhookPostgresTests
         payment.ClearDomainEvents();
         await uow.SaveChangesAsync();
 
-        var body = WebhookBody("pg-evt-fail", "FAILED", payment.Id, payment.ProviderPaymentId, failureReason: "declined");
+        var body = WebhookBody(
+            $"pg-evt-fail-{Guid.NewGuid():N}",
+            "FAILED",
+            payment.Id,
+            payment.ProviderPaymentId,
+            failureReason: "declined",
+            amount: payment.Amount.Amount);
         var result = await webhook.Handle(
             new ProcessWebhookCommand(PaymentProviderCodes.Test, SignedHeaders(body), Encoding.UTF8.GetBytes(body)),
             CancellationToken.None);
@@ -203,18 +219,19 @@ public sealed class PaymentWebhookPostgresTests
         loadedBooking.Status.Should().Be(BookingStatusCode.PendingPayment);
     }
 
-    private static Booking InstantBook()
+    private static Booking InstantBook(DateTime? createdAtUtc = null)
     {
+        var at = createdAtUtc ?? Now;
         return Booking.CreateRequest(
-            "BK-2026-000000099",
+            $"BK-IT-{Guid.NewGuid():N}"[..32],
             Guid.NewGuid(),
             Guid.NewGuid(),
             Guid.NewGuid(),
             BookingPeriod.Create(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 5)),
             Money.Create(100m, CurrencyId),
-            BookingAssetSnapshot.Create("Car", Guid.NewGuid(), Now),
+            BookingAssetSnapshot.Create("Car", Guid.NewGuid(), at),
             BookingTerms.Create(1),
-            Now,
+            at,
             instantBook: true);
     }
 
@@ -223,7 +240,8 @@ public sealed class PaymentWebhookPostgresTests
         string outcome,
         Guid paymentId,
         string? providerPaymentId,
-        string? failureReason = null)
+        string? failureReason = null,
+        decimal amount = 500m)
     {
         var payload = new
         {
@@ -231,7 +249,7 @@ public sealed class PaymentWebhookPostgresTests
             outcome,
             paymentId,
             providerPaymentId,
-            amount = 100m,
+            amount,
             currencyId = CurrencyId,
             failureReason,
             occurredAtUtc = Now

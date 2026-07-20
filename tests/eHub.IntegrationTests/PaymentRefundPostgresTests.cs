@@ -48,8 +48,10 @@ public sealed class PaymentRefundPostgresTests
         var refund = readDb.Set<Refund>().Single(r => r.Id == result.RefundId);
         refund.IdempotencyKey.Should().Be("ref-pg-1");
 
+        var paymentIdText = paymentId.ToString();
         var outboxTypes = readDb.OutboxMessages
-            .Where(o => o.PayloadJson.Contains(paymentId.ToString(), StringComparison.Ordinal))
+            .AsEnumerable()
+            .Where(o => o.PayloadJson.Contains(paymentIdText, StringComparison.Ordinal))
             .Select(o => o.Type)
             .ToList();
         outboxTypes.Should().Contain("RefundRequested");

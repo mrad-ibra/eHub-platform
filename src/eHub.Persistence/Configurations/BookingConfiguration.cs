@@ -13,6 +13,7 @@ public sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
     {
         builder.ToTable("bookings");
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
 
         builder.Property(x => x.BookingNumber).HasMaxLength(32).IsRequired();
         builder.HasIndex(x => x.BookingNumber).IsUnique();

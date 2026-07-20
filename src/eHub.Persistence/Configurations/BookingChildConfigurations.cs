@@ -10,6 +10,8 @@ public sealed class BookingTimelineEntryConfiguration : IEntityTypeConfiguration
     {
         builder.ToTable("booking_timeline_entries");
         builder.HasKey(x => x.Id);
+        // Client-assigned Guids: without this, DetectChanges treats new children as Modified (EF Core 3+).
+        builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.Code).HasMaxLength(64).IsRequired();
         builder.Property(x => x.Message).HasMaxLength(2000).IsRequired();
         builder.Property(x => x.ActorId);
@@ -25,6 +27,7 @@ public sealed class BookingStatusHistoryEntryConfiguration : IEntityTypeConfigur
     {
         builder.ToTable("booking_status_history");
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.FromStatus).HasMaxLength(64);
         builder.Property(x => x.ToStatus).HasMaxLength(64).IsRequired();
         builder.Property(x => x.ActorId);
