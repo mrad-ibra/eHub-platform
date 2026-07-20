@@ -1,7 +1,8 @@
 # Sprint 6.3 — Payment Provider Integration & Webhook Processing
 
-**Status:** **READY FOR ARCHITECT REVIEW**  
+**Status:** **APPROVED / CLOSED**  
 **Date:** 2026-07-20  
+**Architect review:** v19 (security) + v20 (maturity) — no critical blockers
 
 ## Sprint goal
 
@@ -107,8 +108,29 @@ Payriff real integration should follow provider docs (e.g. Kapital Bank PG API) 
 
 **Architect conclusion (v19):** No critical blockers; architecture near production-ready. Next: real Stripe/Payriff verification, Refund API, notifications.
 
+## Architect review (v20) — maturity
+
+| Area | Rating | Notes |
+|------|--------|-------|
+| Payment → Webhook → Outbox → Booking | ✅ | L9 respected; late success handled |
+| Webhook controller | ✅ | Raw body, headers, 401/404/200 mapping |
+| Provider abstraction | ✅ | Correct dependency direction |
+| Stripe/Payriff | 🟡 | Skeleton by design — wire before production go-live |
+| Outbox consumer retry/DLQ | 🟡 | AttemptCount + log only; backoff/DLQ backlog |
+| Outbox batch transactions | 🟡 | 50-msg batch + single SaveChanges; claim model backlog |
+| Notification | 🟢 | Separate module; not in this sprint |
+| Redis | 🟢 | Correctly deferred |
+
+**Architect conclusion (v20):** Most stable ZIP to date; **production-oriented backend**. Remaining work = real providers, refund API, notifications, ops hardening (retry/DLQ).
+
 ## Handoff
 
-→ **Sprint 6.4** — Refund API + partial/full refund + late-success auto-refund path.
+→ **Sprint 6.4** — Refund HTTP API + partial/full workflow + late-success auto-refund.
 
-→ **Sprint 7+** — Redis when concrete need (cache, lock, rate limit, notification queue).
+→ **Sprint 6.5 / provider sprint** — Real Stripe + Payriff (Kapital PG) signature/SDK adapters.
+
+→ **Sprint 7.0** — Notification module (email/SMS/push via outbox consumers).
+
+→ **Backlog (ops)** — Outbox exponential backoff, poison/dead-letter, claim-and-complete batching.
+
+→ **Sprint 7+/8** — Redis only when needed (availability cache, distributed lock, multi-instance rate limit).
