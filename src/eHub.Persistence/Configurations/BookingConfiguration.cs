@@ -134,7 +134,8 @@ public sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
             .OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(x => x.Timeline)
             .HasField("_timeline")
-            .UsePropertyAccessMode(PropertyAccessMode.Field);
+            .UsePropertyAccessMode(PropertyAccessMode.Field)
+            .AutoInclude();
 
         builder.HasMany(x => x.StatusHistory)
             .WithOne()
@@ -142,7 +143,8 @@ public sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
             .OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(x => x.StatusHistory)
             .HasField("_statusHistory")
-            .UsePropertyAccessMode(PropertyAccessMode.Field);
+            .UsePropertyAccessMode(PropertyAccessMode.Field)
+            .AutoInclude();
 
         builder.HasIndex(x => new { x.AssetId, x.Status });
         builder.HasIndex(x => new { x.ExpiresAtUtc, x.Status });

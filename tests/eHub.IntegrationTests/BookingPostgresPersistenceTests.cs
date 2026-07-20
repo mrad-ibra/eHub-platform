@@ -222,34 +222,52 @@ public sealed class BookingPostgresPersistenceTests
     {
         RequirePostgres();
 
-        await using var db1 = _fixture.CreateDbContext();
+        Guid bookingId;
+        Guid hostId;
         var clock = new FixedClock(new DateTime(2026, 7, 19, 12, 0, 0, DateTimeKind.Utc));
-        var repo = new EfBookingRepository(db1, clock);
-        var numbers = new EfBookingNumberGenerator(db1, clock);
-        var number = await numbers.NextAsync();
-        var booking = PostgresBookingFixture.CreateSoftHold(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            new DateOnly(2026, 11, 1),
-            new DateOnly(2026, 11, 2),
-            number,
-            clock.UtcNow);
 
-        await repo.AddAsync(booking, clock.UtcNow);
-        await db1.SaveChangesAsync();
+        await using (var db1 = _fixture.CreateDbContext())
+        {
+            var repo = new EfBookingRepository(db1, clock);
+            var numbers = new EfBookingNumberGenerator(db1, clock);
+            var number = await numbers.NextAsync();
+            var booking = PostgresBookingFixture.CreateSoftHold(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                new DateOnly(2026, 11, 1),
+                new DateOnly(2026, 11, 2),
+                number,
+                clock.UtcNow);
+
+            await repo.AddAsync(booking, clock.UtcNow);
+            await db1.SaveChangesAsync();
+            bookingId = booking.Id;
+            hostId = booking.HostId;
+        }
 
         await using var dbA = _fixture.CreateDbContext();
         await using var dbB = _fixture.CreateDbContext();
-        var a = await dbA.Bookings.SingleAsync(b => b.Id == booking.Id);
-        var b = await dbB.Bookings.SingleAsync(b => b.Id == booking.Id);
 
-        a.Approve(a.HostId, clock.UtcNow.AddMinutes(1));
+        // Load full aggregate (Timeline/StatusHistory AutoInclude) so EF does not treat
+        // empty field-initialized collections as "loaded" and orphan-delete history rows.
+        var a = await dbA.Bookings.SingleAsync(b => b.Id == bookingId);
+        var b = await dbB.Bookings.SingleAsync(b => b.Id == bookingId);
+
+        a.AggregateVersion.Should().Be(1);
+        b.AggregateVersion.Should().Be(1);
+        a.StatusHistory.Should().NotBeEmpty();
+        b.StatusHistory.Should().NotBeEmpty();
+
+        a.Approve(hostId, clock.UtcNow.AddMinutes(1));
+        a.AggregateVersion.Should().Be(2);
         await dbA.SaveChangesAsync();
 
-        b.Approve(b.HostId, clock.UtcNow.AddMinutes(2));
-        var act = () => dbB.SaveChangesAsync();
-        await act.Should().ThrowAsync<DbUpdateConcurrencyException>();
+        b.Approve(hostId, clock.UtcNow.AddMinutes(2));
+        b.AggregateVersion.Should().Be(2);
+
+        await FluentActions.Awaiting(() => dbB.SaveChangesAsync())
+            .Should().ThrowAsync<DbUpdateConcurrencyException>();
     }
 
     [SkippableFact]

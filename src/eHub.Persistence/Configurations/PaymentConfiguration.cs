@@ -80,7 +80,8 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(x => x.Timeline)
             .HasField("_timeline")
-            .UsePropertyAccessMode(PropertyAccessMode.Field);
+            .UsePropertyAccessMode(PropertyAccessMode.Field)
+            .AutoInclude();
 
         builder.HasMany(x => x.StatusHistory)
             .WithOne()
@@ -88,7 +89,8 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(x => x.StatusHistory)
             .HasField("_statusHistory")
-            .UsePropertyAccessMode(PropertyAccessMode.Field);
+            .UsePropertyAccessMode(PropertyAccessMode.Field)
+            .AutoInclude();
 
         builder.HasMany(x => x.Attempts)
             .WithOne()
@@ -96,7 +98,8 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(x => x.Attempts)
             .HasField("_attempts")
-            .UsePropertyAccessMode(PropertyAccessMode.Field);
+            .UsePropertyAccessMode(PropertyAccessMode.Field)
+            .AutoInclude();
 
         builder.HasMany(x => x.Refunds)
             .WithOne()
@@ -104,7 +107,8 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(x => x.Refunds)
             .HasField("_refunds")
-            .UsePropertyAccessMode(PropertyAccessMode.Field);
+            .UsePropertyAccessMode(PropertyAccessMode.Field)
+            .AutoInclude();
 
         builder.HasIndex(x => new { x.ExpiresAtUtc, x.Status });
         builder.HasIndex(x => x.Status);
