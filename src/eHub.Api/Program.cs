@@ -31,6 +31,8 @@ try
     builder.Services.AddEHubCors(builder.Configuration);
     builder.Services.AddEHubRateLimiting(builder.Configuration);
 
+    builder.EnsureProductionPersistence();
+
     var app = builder.Build();
 
     app.UseEHubObservability();

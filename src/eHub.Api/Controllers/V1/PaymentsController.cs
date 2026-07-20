@@ -1,6 +1,5 @@
 using Asp.Versioning;
 using eHub.Application.Identity.Authorization;
-using eHub.Application.Payments;
 using eHub.Application.Payments.Commands.CancelPayment;
 using eHub.Application.Payments.Commands.CreatePayment;
 using eHub.Application.Payments.Queries.GetPayment;
@@ -37,11 +36,16 @@ public sealed class PaymentsController(ISender sender) : ControllerBase
             throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.PaymentIdempotencyKeyRequired));
         }
 
+        if (string.IsNullOrWhiteSpace(request.Provider))
+        {
+            throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.PaymentProviderRequired));
+        }
+
         var result = await sender.Send(
             new CreatePaymentCommand(
                 request.BookingId,
                 keyValues.ToString()!,
-                request.Provider ?? PaymentProviderCodes.Test),
+                request.Provider.Trim()),
             cancellationToken);
 
         return CreatedAtAction(
@@ -76,4 +80,4 @@ public sealed class PaymentsController(ISender sender) : ControllerBase
     }
 }
 
-public sealed record CreatePaymentRequest(Guid BookingId, string? Provider = PaymentProviderCodes.Test);
+public sealed record CreatePaymentRequest(Guid BookingId, string Provider);

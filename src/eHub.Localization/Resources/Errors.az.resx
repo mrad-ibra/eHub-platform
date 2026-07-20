@@ -268,9 +268,15 @@
     <value>Bu bron üçün artıq aktiv ödəniş var.</value>
   </data>
   <data name="PaymentIdempotencyPayloadMismatch" xml:space="preserve">
-    <value>Idempotency-Key fərqli bron ilə təkrar istifadə olunub.</value>
+    <value>Idempotency-Key fərqli bron, provider və ya istifadəçi ilə təkrar istifadə olunub.</value>
   </data>
   <data name="PaymentIdempotencyKeyRequired" xml:space="preserve">
     <value>Idempotency-Key header tələb olunur.</value>
+  </data>
+  <data name="PaymentProviderRequired" xml:space="preserve">
+    <value>Payment provider tələb olunur.</value>
+  </data>
+  <data name="PaymentTestProviderNotAllowed" xml:space="preserve">
+    <value>TEST payment provider bu mühitdə icazə verilmir.</value>
   </data>
 </root>

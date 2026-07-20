@@ -44,11 +44,20 @@ public static class PostgresExceptionMapper
     private static string MapUnique(PostgresException pg)
     {
         var constraint = pg.ConstraintName ?? string.Empty;
+
+        if (IsPaymentActivePerBookingConstraint(constraint))
+        {
+            return ErrorResources.Get(ErrorCodes.PaymentActiveAlreadyExists);
+        }
+
+        if (IsPaymentIdempotencyConstraint(constraint))
+        {
+            return ErrorResources.Get(ErrorCodes.PaymentIdempotencyPayloadMismatch);
+        }
+
         if (constraint.Contains("idempotency", StringComparison.OrdinalIgnoreCase)
             || constraint.Contains("booking_idempotency", StringComparison.OrdinalIgnoreCase))
         {
-            // Unique violation alone cannot distinguish payload mismatch vs parallel same-hash.
-            // Callers that insert should re-read the row (BeginAsync does). Fallback semantics: in progress.
             return ErrorResources.Get(ErrorCodes.BookingRequestInProgress);
         }
 
@@ -60,6 +69,14 @@ public static class PostgresExceptionMapper
 
         return ErrorResources.Get(ErrorCodes.BookingConflict);
     }
+
+    public static bool IsPaymentActivePerBookingConstraint(string constraint)
+        => constraint.Equals("ux_payments_one_active_per_booking", StringComparison.OrdinalIgnoreCase)
+            || constraint.Contains("one_active_per_booking", StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsPaymentIdempotencyConstraint(string constraint)
+        => constraint.Contains("payments", StringComparison.OrdinalIgnoreCase)
+            && constraint.Contains("IdempotencyKey", StringComparison.OrdinalIgnoreCase);
 
     private static PostgresException? FindPostgresException(Exception? exception)
     {

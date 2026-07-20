@@ -91,4 +91,6 @@ public static class ErrorCodes
     public const string PaymentActiveAlreadyExists = nameof(PaymentActiveAlreadyExists);
     public const string PaymentIdempotencyPayloadMismatch = nameof(PaymentIdempotencyPayloadMismatch);
     public const string PaymentIdempotencyKeyRequired = nameof(PaymentIdempotencyKeyRequired);
+    public const string PaymentProviderRequired = nameof(PaymentProviderRequired);
+    public const string PaymentTestProviderNotAllowed = nameof(PaymentTestProviderNotAllowed);
 }

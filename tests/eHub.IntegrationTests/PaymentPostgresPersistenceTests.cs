@@ -1,6 +1,8 @@
 using eHub.Domain.Bookings;
 using eHub.Domain.Common;
 using eHub.Domain.Payments;
+using eHub.Domain.Exceptions;
+using eHub.Localization;
 using eHub.Persistence;
 using eHub.Persistence.Repositories;
 using FluentAssertions;
@@ -125,6 +127,7 @@ public sealed class PaymentPostgresPersistenceTests
         await payments.AddAsync(second);
 
         var act = () => uow.SaveChangesAsync();
-        await act.Should().ThrowAsync<DbUpdateException>();
+        await act.Should().ThrowAsync<ConflictException>()
+            .WithMessage(ErrorResources.Get(ErrorCodes.PaymentActiveAlreadyExists));
     }
 }

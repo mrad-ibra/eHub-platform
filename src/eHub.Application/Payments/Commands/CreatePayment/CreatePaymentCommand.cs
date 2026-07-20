@@ -1,12 +1,11 @@
 using eHub.Application.Common.Messaging;
-using eHub.Application.Payments;
 
 namespace eHub.Application.Payments.Commands.CreatePayment;
 
 public sealed record CreatePaymentCommand(
     Guid BookingId,
     string IdempotencyKey,
-    string Provider = PaymentProviderCodes.Test) : ICommand<CreatePaymentResult>;
+    string Provider) : ICommand<CreatePaymentResult>;
 
 public sealed record CreatePaymentResult(
     Guid Id,

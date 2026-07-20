@@ -268,9 +268,15 @@
     <value>An active payment already exists for this booking.</value>
   </data>
   <data name="PaymentIdempotencyPayloadMismatch" xml:space="preserve">
-    <value>Idempotency-Key was reused with a different booking.</value>
+    <value>Idempotency-Key was reused with a different booking, provider, or user.</value>
   </data>
   <data name="PaymentIdempotencyKeyRequired" xml:space="preserve">
     <value>Idempotency-Key header is required.</value>
+  </data>
+  <data name="PaymentProviderRequired" xml:space="preserve">
+    <value>Payment provider is required.</value>
+  </data>
+  <data name="PaymentTestProviderNotAllowed" xml:space="preserve">
+    <value>The TEST payment provider is not allowed in this environment.</value>
   </data>
 </root>

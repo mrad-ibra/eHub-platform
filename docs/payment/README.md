@@ -3,7 +3,7 @@
 **Sprint 6.0:** Architecture Pack — **APPROVED**  
 **Sprint 6.1 Phase 1:** Domain — **APPROVED**  
 **Sprint 6.2:** Application + Persistence + API — **APPROVED / CLOSED** ([14](14-sprint-62.md))  
-**Sprint 6.3:** Provider + Webhook — **READY FOR ARCHITECT REVIEW** ([15](15-sprint-63.md))
+**Sprint 6.3:** Payment Provider Integration & Webhook Processing — **READY FOR ARCHITECT REVIEW** ([15](15-sprint-63.md))
 
 ## Roadmap
 
@@ -13,7 +13,7 @@
 | 6.0 | Payment architecture | ✅ |
 | 6.1 | Payment Domain | ✅ |
 | 6.2 | Application + Persistence + API | ✅ |
-| **6.3** | **Provider + Webhook** | **🎯 Review** |
+| **6.3** | **Provider Integration & Webhook Processing** | **🎯 Review** |
 | 6.4 | Refund + Outbox → Booking | Next |
 | 7.0 | Notification | Later |
 | 8.0 | Search | Later |

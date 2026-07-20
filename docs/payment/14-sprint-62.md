@@ -18,4 +18,4 @@ CreatePayment, Cancel, Expire, GetPayment, EF + migration, Outbox on write, API,
 
 ## Handoff
 
-→ **Sprint 6.3 — Payment Provider & Webhook Integration** (`docs/payment/15-sprint-63.md`)
+→ **Sprint 6.3 — Payment Provider Integration & Webhook Processing** (`docs/payment/15-sprint-63.md`)

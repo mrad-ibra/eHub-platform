@@ -43,6 +43,8 @@ public static class DependencyInjection
         services.AddSingleton<IBookingExpiryNotifier, LoggingBookingExpiryNotifier>();
         services.AddSingleton<IExpireBookingsMetrics, LoggingExpireBookingsMetrics>();
         services.AddSingleton<IPaymentProvider, FakePaymentProvider>();
+        services.AddSingleton<IPaymentProvider, StripePaymentProvider>();
+        services.AddSingleton<IPaymentProvider, PayriffPaymentProvider>();
         services.AddSingleton<IPaymentProviderResolver, PaymentProviderResolver>();
         AddCatalogRepositories(services);
         services.AddHostedService<AuthSeedHostedService>();

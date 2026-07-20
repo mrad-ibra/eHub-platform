@@ -28,6 +28,7 @@ public static class DependencyInjection
         services.Configure<CorsOptions>(configuration.GetSection(CorsOptions.SectionName));
         services.Configure<RateLimitingOptions>(configuration.GetSection(RateLimitingOptions.SectionName));
         services.Configure<PaymentProviderOptions>(configuration.GetSection(PaymentProviderOptions.SectionName));
+        services.Configure<PaymentsOptions>(configuration.GetSection(PaymentsOptions.SectionName));
 
         services.AddSingleton<IAuthorizationCatalog, AuthorizationCatalog>();
         services.AddScoped<IAuthSessionFactory, AuthSessionFactory>();

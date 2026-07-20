@@ -5,10 +5,27 @@ public sealed class PaymentProviderOptions
     public const string SectionName = "Payments:Providers";
 
     public FakeProviderOptions Fake { get; set; } = new();
+    public StripeProviderOptions Stripe { get; set; } = new();
+    public PayriffProviderOptions Payriff { get; set; } = new();
 }
 
 public sealed class FakeProviderOptions
 {
     public string WebhookSecret { get; set; } = "ehub-fake-webhook-secret-change-me";
     public int TimestampToleranceSeconds { get; set; } = 300;
+}
+
+public sealed class StripeProviderOptions
+{
+    public bool Enabled { get; set; }
+    public string ApiKey { get; set; } = string.Empty;
+    public string WebhookSecret { get; set; } = string.Empty;
+}
+
+public sealed class PayriffProviderOptions
+{
+    public bool Enabled { get; set; }
+    public string MerchantId { get; set; } = string.Empty;
+    public string SecretKey { get; set; } = string.Empty;
+    public string WebhookSecret { get; set; } = string.Empty;
 }

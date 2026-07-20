@@ -30,6 +30,7 @@
     <ProjectReference Include="..\..\src\eHub.Localization\eHub.Localization.csproj" />
     <ProjectReference Include="..\..\src\eHub.SharedKernel\eHub.SharedKernel.csproj" />
     <ProjectReference Include="..\..\src\eHub.Infrastructure\eHub.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\eHub.Persistence\eHub.Persistence.csproj" />
   </ItemGroup>
 
 </Project>
