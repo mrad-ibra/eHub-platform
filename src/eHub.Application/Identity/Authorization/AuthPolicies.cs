@@ -12,4 +12,5 @@ public static class AuthPolicies
     public const string PaymentsRead = "payments.read";
     public const string PaymentsCancel = "payments.cancel";
     public const string PaymentsRefund = "payments.refund";
+    public const string PaymentsRefundRead = "payments.refund.read";
 }

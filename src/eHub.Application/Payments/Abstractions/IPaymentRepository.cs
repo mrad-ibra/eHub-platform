@@ -22,4 +22,6 @@ public interface IPaymentRepository
         DateTime nowUtc,
         int take,
         CancellationToken cancellationToken = default);
+
+    Task<Refund?> GetRefundByIdAsync(Guid refundId, CancellationToken cancellationToken = default);
 }

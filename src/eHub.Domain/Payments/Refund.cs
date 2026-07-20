@@ -61,8 +61,10 @@ public sealed class RefundStatusCode : IEquatable<RefundStatusCode>
 public sealed class Refund
 {
     public Guid Id { get; private set; }
+    public Guid PaymentId { get; private set; }
     public Money Amount { get; private set; } = null!;
     public string Reason { get; private set; } = string.Empty;
+    public string IdempotencyKey { get; private set; } = string.Empty;
     public string Status { get; private set; } = string.Empty;
     public string? ProviderRefundId { get; private set; }
     public Guid? RequestedByActorId { get; private set; }
@@ -74,14 +76,22 @@ public sealed class Refund
     }
 
     internal static Refund Request(
+        Guid paymentId,
         Money amount,
         string reason,
+        string idempotencyKey,
         DateTime nowUtc,
         Guid? actorId)
     {
         if (amount.Amount <= 0)
         {
             throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.PaymentRefundAmountInvalid));
+        }
+
+        var key = AppGuard.NotEmpty(idempotencyKey, nameof(idempotencyKey)).Trim();
+        if (key.Length > PaymentDefaults.MaxIdempotencyKeyLength)
+        {
+            throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.PaymentIdempotencyKeyInvalid));
         }
 
         var trimmed = AppGuard.NotEmpty(reason, nameof(reason)).Trim();
@@ -93,8 +103,10 @@ public sealed class Refund
         return new Refund
         {
             Id = Guid.NewGuid(),
+            PaymentId = paymentId,
             Amount = amount,
             Reason = trimmed,
+            IdempotencyKey = key,
             Status = RefundStatusCode.Requested,
             RequestedByActorId = actorId,
             RequestedAtUtc = nowUtc
@@ -129,4 +141,9 @@ public sealed class Refund
         Status = RefundStatusCode.Failed;
         SettledAtUtc = atUtc;
     }
+
+    public bool MatchesIdempotentPayload(decimal amount, Guid currencyId, string reason)
+        => Amount.Amount == amount
+            && Amount.CurrencyId == currencyId
+            && string.Equals(Reason, reason.Trim(), StringComparison.Ordinal);
 }

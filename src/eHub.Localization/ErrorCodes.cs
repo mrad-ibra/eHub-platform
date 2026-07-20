@@ -86,6 +86,8 @@ public static class ErrorCodes
     public const string PaymentRefundNotAllowed = nameof(PaymentRefundNotAllowed);
     public const string PaymentRefundAmountInvalid = nameof(PaymentRefundAmountInvalid);
     public const string PaymentRefundReasonTooLong = nameof(PaymentRefundReasonTooLong);
+    public const string PaymentRefundIdempotencyPayloadMismatch = nameof(PaymentRefundIdempotencyPayloadMismatch);
+    public const string PaymentRefundIdempotencyKeyRequired = nameof(PaymentRefundIdempotencyKeyRequired);
     public const string PaymentAccessDenied = nameof(PaymentAccessDenied);
     public const string PaymentBookingNotPayable = nameof(PaymentBookingNotPayable);
     public const string PaymentActiveAlreadyExists = nameof(PaymentActiveAlreadyExists);

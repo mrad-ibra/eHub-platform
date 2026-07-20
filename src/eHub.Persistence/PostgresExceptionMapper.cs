@@ -25,6 +25,9 @@ public static class PostgresExceptionMapper
             case PostgresErrorCodes.UniqueViolation:
                 mapped = new ConflictException(MapUnique(pg));
                 return true;
+            case PostgresErrorCodes.CheckViolation:
+                mapped = new ConflictException(MapCheck(pg));
+                return true;
             case PostgresErrorCodes.ExclusionViolation:
                 mapped = new ConflictException(ErrorResources.Get(ErrorCodes.BookingConflict));
                 return true;
@@ -55,6 +58,11 @@ public static class PostgresExceptionMapper
             return ErrorResources.Get(ErrorCodes.PaymentIdempotencyPayloadMismatch);
         }
 
+        if (IsPaymentRefundIdempotencyConstraint(constraint))
+        {
+            return ErrorResources.Get(ErrorCodes.PaymentRefundIdempotencyPayloadMismatch);
+        }
+
         if (constraint.Contains("idempotency", StringComparison.OrdinalIgnoreCase)
             || constraint.Contains("booking_idempotency", StringComparison.OrdinalIgnoreCase))
         {
@@ -70,13 +78,30 @@ public static class PostgresExceptionMapper
         return ErrorResources.Get(ErrorCodes.BookingConflict);
     }
 
+    private static string MapCheck(PostgresException pg)
+    {
+        var constraint = pg.ConstraintName ?? string.Empty;
+
+        if (constraint.Contains("refunded_bounds", StringComparison.OrdinalIgnoreCase))
+        {
+            return ErrorResources.Get(ErrorCodes.PaymentRefundAmountInvalid);
+        }
+
+        return ErrorResources.Get(ErrorCodes.PaymentRefundNotAllowed);
+    }
+
     public static bool IsPaymentActivePerBookingConstraint(string constraint)
         => constraint.Equals("ux_payments_one_active_per_booking", StringComparison.OrdinalIgnoreCase)
             || constraint.Contains("one_active_per_booking", StringComparison.OrdinalIgnoreCase);
 
     public static bool IsPaymentIdempotencyConstraint(string constraint)
         => constraint.Contains("payments", StringComparison.OrdinalIgnoreCase)
-            && constraint.Contains("IdempotencyKey", StringComparison.OrdinalIgnoreCase);
+            && constraint.Contains("IdempotencyKey", StringComparison.OrdinalIgnoreCase)
+            && !constraint.Contains("refund", StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsPaymentRefundIdempotencyConstraint(string constraint)
+        => constraint.Contains("payment_refunds", StringComparison.OrdinalIgnoreCase)
+            || constraint.Contains("refunds_payment_idempotency", StringComparison.OrdinalIgnoreCase);
 
     private static PostgresException? FindPostgresException(Exception? exception)
     {

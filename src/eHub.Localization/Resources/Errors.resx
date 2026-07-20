@@ -258,6 +258,12 @@
   <data name="PaymentRefundReasonTooLong" xml:space="preserve">
     <value>Refund reason is too long.</value>
   </data>
+  <data name="PaymentRefundIdempotencyPayloadMismatch" xml:space="preserve">
+    <value>Refund idempotency key was reused with a different amount, currency, or reason.</value>
+  </data>
+  <data name="PaymentRefundIdempotencyKeyRequired" xml:space="preserve">
+    <value>Idempotency-Key header is required for refunds.</value>
+  </data>
   <data name="PaymentAccessDenied" xml:space="preserve">
     <value>You do not have access to create a payment for this booking.</value>
   </data>

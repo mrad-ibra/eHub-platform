@@ -258,6 +258,12 @@
   <data name="PaymentRefundReasonTooLong" xml:space="preserve">
     <value>Geri ödəniş səbəbi çox uzundur.</value>
   </data>
+  <data name="PaymentRefundIdempotencyPayloadMismatch" xml:space="preserve">
+    <value>Refund idempotency açarı fərqli məbləğ, valyuta və ya səbəb ilə təkrar istifadə olunub.</value>
+  </data>
+  <data name="PaymentRefundIdempotencyKeyRequired" xml:space="preserve">
+    <value>Refund üçün Idempotency-Key header tələb olunur.</value>
+  </data>
   <data name="PaymentAccessDenied" xml:space="preserve">
     <value>Bu bron üçün ödəniş yaratmaq icazəniz yoxdur.</value>
   </data>

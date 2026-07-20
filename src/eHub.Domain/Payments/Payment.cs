@@ -281,14 +281,174 @@ public sealed class Payment : AggregateRoot
     }
 
     /// <summary>
-    /// Settles a refund (partial or full). Updates RefundedAmount and status.
+    /// Webhook or internal path: request + settle in one step (provider already confirmed).
     /// </summary>
     public Refund AddRefund(
         Money amount,
         string reason,
         DateTime nowUtc,
         Guid? actorId = null,
-        string? providerRefundId = null)
+        string? providerRefundId = null,
+        string? idempotencyKey = null)
+    {
+        var key = idempotencyKey ?? $"wh_{Guid.NewGuid():N}";
+        var refund = BeginRefund(amount, reason, key, nowUtc, actorId);
+        CompleteRefund(refund.Id, providerRefundId, nowUtc);
+        return refund;
+    }
+
+    /// <summary>Starts a refund row in Requested state (API / provider path).</summary>
+    public Refund BeginRefund(
+        Money amount,
+        string reason,
+        string idempotencyKey,
+        DateTime nowUtc,
+        Guid? actorId = null)
+    {
+        EnsureRefundAmount(amount);
+
+        if (Refunds.Any(r => r.IdempotencyKey == idempotencyKey.Trim()))
+        {
+            throw new ConflictException(ErrorResources.Get(ErrorCodes.PaymentRefundIdempotencyPayloadMismatch));
+        }
+
+        var refund = Refund.Request(Id, amount, reason, idempotencyKey, nowUtc, actorId);
+        _refunds.Add(refund);
+
+        Raise(new RefundRequested(
+            Id,
+            BookingId,
+            refund.Id,
+            amount.Amount,
+            amount.CurrencyId,
+            refund.IdempotencyKey,
+            nowUtc));
+
+        return refund;
+    }
+
+    /// <summary>Settles a previously requested refund after provider success.</summary>
+    public void CompleteRefund(Guid refundId, string? providerRefundId, DateTime nowUtc)
+    {
+        var refund = FindOpenRefund(refundId);
+        refund.MarkSucceeded(nowUtc, providerRefundId);
+
+        RefundedAmount = RefundedAmount.Add(refund.Amount);
+
+        RecordAttempt(
+            PaymentAttemptKind.Refund,
+            PaymentAttemptResult.Succeeded,
+            nowUtc,
+            providerRefundId,
+            detail: refund.Reason);
+
+        var fully = RefundedAmount.Amount >= Amount.Amount;
+        var target = fully ? PaymentStatusCode.Refunded : PaymentStatusCode.PartiallyRefunded;
+
+        if (Status != target)
+        {
+            ApplyTransition(
+                target,
+                nowUtc,
+                refund.RequestedByActorId,
+                fully ? "Refunded" : "PartiallyRefunded",
+                fully
+                    ? "Payment fully refunded."
+                    : $"Partial refund settled ({refund.Amount.Amount}).",
+                refund.Reason);
+        }
+        else
+        {
+            _timeline.Add(PaymentTimelineEntry.Create(
+                "PartiallyRefunded",
+                $"Further partial refund settled ({refund.Amount.Amount}).",
+                nowUtc,
+                refund.RequestedByActorId));
+            SetUpdatedAudit(nowUtc, refund.RequestedByActorId);
+            MarkChanged();
+        }
+
+        Raise(new RefundSucceeded(
+            Id,
+            BookingId,
+            refund.Id,
+            refund.Amount.Amount,
+            refund.Amount.CurrencyId,
+            nowUtc));
+
+        if (fully)
+        {
+            Raise(new PaymentFullyRefunded(
+                Id,
+                BookingId,
+                Amount.Amount,
+                Amount.CurrencyId,
+                nowUtc));
+        }
+        else
+        {
+            Raise(new PaymentPartiallyRefunded(
+                Id,
+                BookingId,
+                RefundedAmount.Amount,
+                RemainingRefundable.Amount,
+                Amount.CurrencyId,
+                nowUtc));
+        }
+
+        Raise(new PaymentRefunded(
+            Id,
+            BookingId,
+            refund.Id,
+            refund.Amount.Amount,
+            refund.Amount.CurrencyId,
+            fully,
+            nowUtc));
+    }
+
+    /// <summary>Marks a requested refund failed; totals unchanged.</summary>
+    public void FailRefund(Guid refundId, string? failureReason, DateTime nowUtc)
+    {
+        var refund = FindOpenRefund(refundId);
+        refund.MarkFailed(nowUtc);
+
+        RecordAttempt(
+            PaymentAttemptKind.Refund,
+            PaymentAttemptResult.Failed,
+            nowUtc,
+            refund.ProviderRefundId,
+            detail: failureReason ?? "provider_refund_failed");
+
+        Raise(new RefundFailed(
+            Id,
+            BookingId,
+            refund.Id,
+            refund.Amount.Amount,
+            refund.Amount.CurrencyId,
+            failureReason,
+            nowUtc));
+    }
+
+    public Refund? FindRefundByIdempotencyKey(string idempotencyKey)
+    {
+        var key = idempotencyKey.Trim();
+        return Refunds.FirstOrDefault(r => string.Equals(r.IdempotencyKey, key, StringComparison.Ordinal));
+    }
+
+    private Refund FindOpenRefund(Guid refundId)
+    {
+        var refund = Refunds.FirstOrDefault(r => r.Id == refundId)
+            ?? throw new NotFoundException(ErrorResources.Get(ErrorCodes.NotFound));
+
+        if (refund.Status != RefundStatusCode.Requested.Value)
+        {
+            throw new ConflictException(ErrorResources.Get(ErrorCodes.PaymentInvalidStatusTransition));
+        }
+
+        return refund;
+    }
+
+    private void EnsureRefundAmount(Money amount)
     {
         if (!Status.AllowsRefund)
         {
@@ -305,56 +465,6 @@ public sealed class Payment : AggregateRoot
         {
             throw new ValidationFailedException(ErrorResources.Get(ErrorCodes.PaymentRefundAmountInvalid));
         }
-
-        var refund = Refund.Request(amount, reason, nowUtc, actorId);
-        refund.MarkSucceeded(nowUtc, providerRefundId);
-        _refunds.Add(refund);
-
-        RefundedAmount = RefundedAmount.Add(amount);
-
-        RecordAttempt(
-            PaymentAttemptKind.Refund,
-            PaymentAttemptResult.Succeeded,
-            nowUtc,
-            providerRefundId,
-            detail: reason);
-
-        var fully = RefundedAmount.Amount >= Amount.Amount;
-        var target = fully ? PaymentStatusCode.Refunded : PaymentStatusCode.PartiallyRefunded;
-
-        if (Status != target)
-        {
-            ApplyTransition(
-                target,
-                nowUtc,
-                actorId,
-                fully ? "Refunded" : "PartiallyRefunded",
-                fully
-                    ? "Payment fully refunded."
-                    : $"Partial refund settled ({amount.Amount}).",
-                reason);
-        }
-        else
-        {
-            _timeline.Add(PaymentTimelineEntry.Create(
-                "PartiallyRefunded",
-                $"Further partial refund settled ({amount.Amount}).",
-                nowUtc,
-                actorId));
-            SetUpdatedAudit(nowUtc, actorId);
-            MarkChanged();
-        }
-
-        Raise(new PaymentRefunded(
-            Id,
-            BookingId,
-            refund.Id,
-            amount.Amount,
-            amount.CurrencyId,
-            fully,
-            nowUtc));
-
-        return refund;
     }
 
     public void RecordIgnoredAttempt(

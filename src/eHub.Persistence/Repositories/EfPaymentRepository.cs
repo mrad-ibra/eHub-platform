@@ -56,6 +56,10 @@ public sealed class EfPaymentRepository(EHubDbContext db) : IPaymentRepository
             .ToListAsync(cancellationToken);
     }
 
+    public Task<Refund?> GetRefundByIdAsync(Guid refundId, CancellationToken cancellationToken = default)
+        => db.Set<Refund>()
+            .FirstOrDefaultAsync(r => r.Id == refundId, cancellationToken);
+
     private IQueryable<Payment> Query()
         => db.Payments
             .Include(p => p.Timeline)

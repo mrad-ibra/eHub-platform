@@ -2,7 +2,7 @@
 
 **Status:** **APPROVED / CLOSED**  
 **Date:** 2026-07-20  
-**Architect review:** v19 (security) + v20 (maturity) — no critical blockers
+**Architect review:** v19 (security) + v20 (maturity) + v21 (stabilization) — **8.8–9.2/10**, no critical blockers
 
 ## Sprint goal
 
@@ -122,6 +122,27 @@ Payriff real integration should follow provider docs (e.g. Kapital Bank PG API) 
 | Redis | 🟢 | Correctly deferred |
 
 **Architect conclusion (v20):** Most stable ZIP to date; **production-oriented backend**. Remaining work = real providers, refund API, notifications, ops hardening (retry/DLQ).
+
+## Architect review (v21) — stabilization
+
+| Milestone | What landed |
+|-----------|-------------|
+| v17 | Payment API |
+| v19 | Webhook + provider abstraction + security hardening |
+| v20 | Outbox → Booking.Confirm |
+| v21 | Permissions cleanup; architecture stable |
+
+| Area | v21 status |
+|------|------------|
+| Authorization (`payments.*`) | ✅ |
+| Webhook separation | ✅ |
+| Outbox HostedService (L9) | ✅ |
+| Stripe/Payriff skeleton | 🟡 By design — pre-production |
+| Notification | ⏳ Sprint 7.0 |
+| Redis | ⏳ When needed |
+| DLQ / poison messages | Backlog |
+
+**Score:** 8.8–9.2/10 — well-structured production-oriented backend; remaining = features + ops maturity.
 
 ## Handoff
 

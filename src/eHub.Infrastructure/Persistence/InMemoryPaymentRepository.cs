@@ -102,4 +102,12 @@ public sealed class InMemoryPaymentRepository : IPaymentRepository
 
         return Task.FromResult<IReadOnlyList<Payment>>(list);
     }
+
+    public Task<Refund?> GetRefundByIdAsync(Guid refundId, CancellationToken cancellationToken = default)
+    {
+        var refund = _payments.Values
+            .SelectMany(p => p.Refunds)
+            .FirstOrDefault(r => r.Id == refundId);
+        return Task.FromResult(refund);
+    }
 }

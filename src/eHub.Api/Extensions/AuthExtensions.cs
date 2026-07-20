@@ -70,6 +70,9 @@ public static class AuthExtensions
             options.AddPolicy(
                 AuthPolicies.PaymentsRefund,
                 policy => policy.RequireClaim(AuthPolicies.PermissionClaimType, AuthPolicies.PaymentsRefund));
+            options.AddPolicy(
+                AuthPolicies.PaymentsRefundRead,
+                policy => policy.RequireClaim(AuthPolicies.PermissionClaimType, AuthPolicies.PaymentsRefundRead));
         });
 
         services.ConfigureSwaggerGen(options =>

@@ -100,7 +100,7 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 
         builder.HasMany(x => x.Refunds)
             .WithOne()
-            .HasForeignKey("PaymentId")
+            .HasForeignKey(x => x.PaymentId)
             .OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(x => x.Refunds)
             .HasField("_refunds")

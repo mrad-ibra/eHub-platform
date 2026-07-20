@@ -66,12 +66,16 @@ public sealed class RefundConfiguration : IEntityTypeConfiguration<Refund>
         });
 
         builder.Property(x => x.Reason).HasMaxLength(PaymentDefaults.MaxRefundReasonLength).IsRequired();
+        builder.Property(x => x.IdempotencyKey).HasMaxLength(PaymentDefaults.MaxIdempotencyKeyLength).IsRequired();
         builder.Property(x => x.Status).HasMaxLength(32).IsRequired();
         builder.Property(x => x.ProviderRefundId).HasMaxLength(PaymentDefaults.MaxProviderPaymentIdLength);
         builder.Property(x => x.RequestedByActorId);
         builder.Property(x => x.RequestedAtUtc).IsRequired();
         builder.Property(x => x.SettledAtUtc);
-        builder.Property<Guid>("PaymentId").IsRequired();
-        builder.HasIndex("PaymentId");
+        builder.Property(x => x.PaymentId).IsRequired();
+        builder.HasIndex(x => x.PaymentId);
+        builder.HasIndex(x => new { x.PaymentId, x.IdempotencyKey })
+            .IsUnique()
+            .HasDatabaseName("ux_payment_refunds_payment_idempotency");
     }
 }
