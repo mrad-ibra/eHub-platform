@@ -131,6 +131,18 @@ Change only via explicit decision note after APPROVED.
 
 ---
 
+## BR-PAY-016 — Who may cancel a Payment
+
+| Actor | May cancel? | When |
+|-------|-------------|------|
+| **Renter** | **Yes** | Own booking; Payment in `Created` / `Pending` / `Authorized` (before capture). Requires `payments.cancel`. |
+| **Host** | **No** | Host rejects/expiry via **Booking** lifecycle (`Reject` / expire worker). Hosts do **not** cancel Payment rows. |
+| **Admin** | **Yes** | Fraud / dispute / ops; requires `payments.cancel` + Admin role. Same status guards as renter. |
+
+Terminal payments (`Succeeded`, `Failed`, `Cancelled`, `Expired`, `Refunded`, …) reject cancel via domain guards.
+
+---
+
 ## Decision log (proposed — 2026-07-19)
 
 | Topic | Proposed decision |
@@ -144,6 +156,8 @@ Change only via explicit decision note after APPROVED.
 | Webhook | Signature + inbox unique + single TX with outbox |
 | Aggregates | Separate, id-only, Outbox |
 | Refund | Separate rows; partial vs full derivation |
+| Cancel actors | Renter self-service; Host never; Admin fraud/dispute (BR-PAY-016) |
+| API concurrency | Payment DTOs omit `AggregateVersion`; future updates use **ETag** / `If-Match` |
 
 ## Sign-off
 

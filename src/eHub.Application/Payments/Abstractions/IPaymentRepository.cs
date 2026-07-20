@@ -13,6 +13,11 @@ public interface IPaymentRepository
     /// <summary>Active (non-terminal) payment for a booking, if any.</summary>
     Task<Payment?> GetActiveByBookingIdAsync(Guid bookingId, CancellationToken cancellationToken = default);
 
+    Task<Payment?> GetByProviderPaymentIdAsync(
+        string provider,
+        string providerPaymentId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<Payment>> ListExpiredAsync(
         DateTime nowUtc,
         int take,

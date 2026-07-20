@@ -58,6 +58,18 @@ public static class AuthExtensions
             options.AddPolicy(
                 AuthPolicies.BookingsManage,
                 policy => policy.RequireClaim(AuthPolicies.PermissionClaimType, AuthPolicies.BookingsManage));
+            options.AddPolicy(
+                AuthPolicies.PaymentsCreate,
+                policy => policy.RequireClaim(AuthPolicies.PermissionClaimType, AuthPolicies.PaymentsCreate));
+            options.AddPolicy(
+                AuthPolicies.PaymentsRead,
+                policy => policy.RequireClaim(AuthPolicies.PermissionClaimType, AuthPolicies.PaymentsRead));
+            options.AddPolicy(
+                AuthPolicies.PaymentsCancel,
+                policy => policy.RequireClaim(AuthPolicies.PermissionClaimType, AuthPolicies.PaymentsCancel));
+            options.AddPolicy(
+                AuthPolicies.PaymentsRefund,
+                policy => policy.RequireClaim(AuthPolicies.PermissionClaimType, AuthPolicies.PaymentsRefund));
         });
 
         services.ConfigureSwaggerGen(options =>

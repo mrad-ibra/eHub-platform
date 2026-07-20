@@ -68,6 +68,18 @@ public sealed class InMemoryPaymentRepository : IPaymentRepository
         return Task.FromResult(payment);
     }
 
+    public Task<Payment?> GetByProviderPaymentIdAsync(
+        string provider,
+        string providerPaymentId,
+        CancellationToken cancellationToken = default)
+    {
+        var code = PaymentProviderCode.Parse(provider);
+        var payment = _payments.Values.FirstOrDefault(p =>
+            p.Provider == code
+            && string.Equals(p.ProviderPaymentId, providerPaymentId, StringComparison.Ordinal));
+        return Task.FromResult(payment);
+    }
+
     public Task<IReadOnlyList<Payment>> ListExpiredAsync(
         DateTime nowUtc,
         int take,

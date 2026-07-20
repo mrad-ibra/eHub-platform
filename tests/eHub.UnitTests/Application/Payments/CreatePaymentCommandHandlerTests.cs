@@ -18,10 +18,13 @@ public sealed class CreatePaymentCommandHandlerTests
     private static readonly Guid RenterId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid HostId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid CurrencyId = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd");
+    private const string ProviderPaymentId = "fake_provider_1";
 
     private readonly ICurrentUser _currentUser = Substitute.For<ICurrentUser>();
     private readonly IBookingRepository _bookings = Substitute.For<IBookingRepository>();
     private readonly IPaymentRepository _payments = Substitute.For<IPaymentRepository>();
+    private readonly IPaymentProviderResolver _providerResolver = Substitute.For<IPaymentProviderResolver>();
+    private readonly IPaymentProvider _provider = Substitute.For<IPaymentProvider>();
     private readonly IOutboxWriter _outbox = Substitute.For<IOutboxWriter>();
     private readonly IClock _clock = Substitute.For<IClock>();
     private readonly IUnitOfWork _uow = Substitute.For<IUnitOfWork>();
@@ -31,10 +34,14 @@ public sealed class CreatePaymentCommandHandlerTests
     {
         _currentUser.RequireUserId().Returns(RenterId);
         _clock.UtcNow.Returns(Now);
+        _provider.CreatePaymentAsync(Arg.Any<ProviderCreatePaymentRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new ProviderCreatePaymentResult(ProviderPaymentId, "https://payments.ehub.local/fake/checkout"));
+        _providerResolver.GetRequired(Arg.Any<string>()).Returns(_provider);
         _handler = new CreatePaymentCommandHandler(
             _currentUser,
             _bookings,
             _payments,
+            _providerResolver,
             _outbox,
             _clock,
             _uow);
@@ -53,13 +60,16 @@ public sealed class CreatePaymentCommandHandlerTests
             CancellationToken.None);
 
         result.BookingId.Should().Be(booking.Id);
-        result.Status.Should().Be(PaymentStatusCode.Created.Value);
+        result.Status.Should().Be(PaymentStatusCode.Pending.Value);
         result.Amount.Should().Be(booking.TotalPrice.Amount);
         result.CurrencyId.Should().Be(CurrencyId);
         result.ExpiresAtUtc.Should().Be(Now.Add(PaymentDefaults.PaymentWindow));
+        result.ProviderPaymentId.Should().Be(ProviderPaymentId);
+        result.RedirectUrl.Should().Be("https://payments.ehub.local/fake/checkout");
         await _payments.Received(1).AddAsync(Arg.Any<Payment>(), Arg.Any<CancellationToken>());
-        await _outbox.Received(1).EnqueueAsync(
-            Arg.Is<IDomainEvent>(e => e is PaymentCreated),
+        await _provider.Received(1).CreatePaymentAsync(Arg.Any<ProviderCreatePaymentRequest>(), Arg.Any<CancellationToken>());
+        await _outbox.Received(2).EnqueueAsync(
+            Arg.Any<IDomainEvent>(),
             Now,
             Arg.Any<CancellationToken>());
         await _uow.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());

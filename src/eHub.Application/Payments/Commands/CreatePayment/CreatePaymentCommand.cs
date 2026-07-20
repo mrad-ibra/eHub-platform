@@ -1,11 +1,12 @@
 using eHub.Application.Common.Messaging;
+using eHub.Application.Payments;
 
 namespace eHub.Application.Payments.Commands.CreatePayment;
 
 public sealed record CreatePaymentCommand(
     Guid BookingId,
     string IdempotencyKey,
-    string Provider = "TEST") : ICommand<CreatePaymentResult>;
+    string Provider = PaymentProviderCodes.Test) : ICommand<CreatePaymentResult>;
 
 public sealed record CreatePaymentResult(
     Guid Id,
@@ -16,4 +17,5 @@ public sealed record CreatePaymentResult(
     Guid CurrencyId,
     string IdempotencyKey,
     DateTime? ExpiresAtUtc,
-    int AggregateVersion);
+    string? ProviderPaymentId = null,
+    string? RedirectUrl = null);

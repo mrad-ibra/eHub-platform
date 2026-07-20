@@ -18,5 +18,7 @@ public sealed class HttpCurrentUser(IHttpContextAccessor httpContextAccessor) : 
 
     public bool IsInRole(string role) => Inner.IsInRole(role);
 
+    public bool HasPermission(string permission) => Inner.HasPermission(permission);
+
     public Guid RequireUserId() => Inner.RequireUserId();
 }

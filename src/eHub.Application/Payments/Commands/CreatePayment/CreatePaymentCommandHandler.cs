@@ -32,6 +32,7 @@ public sealed class CreatePaymentCommandHandler(
     ICurrentUser currentUser,
     IBookingRepository bookings,
     IPaymentRepository payments,
+    IPaymentProviderResolver providerResolver,
     IOutboxWriter outbox,
     IClock clock,
     IUnitOfWork unitOfWork) : ICommandHandler<CreatePaymentCommand, CreatePaymentResult>
@@ -79,15 +80,27 @@ public sealed class CreatePaymentCommandHandler(
             throw new ConflictException(ErrorResources.Get(ErrorCodes.PaymentActiveAlreadyExists));
         }
 
-        var provider = PaymentProviderCode.Parse(request.Provider);
+        var providerCode = PaymentProviderCode.Parse(request.Provider);
+        var adapter = providerResolver.GetRequired(providerCode.Value);
         var payment = Payment.Create(
             booking.Id,
             booking.TotalPrice,
-            provider,
+            providerCode,
             key,
             now);
 
         await payments.AddAsync(payment, cancellationToken);
+
+        var created = await adapter.CreatePaymentAsync(
+            new ProviderCreatePaymentRequest(
+                payment.Id,
+                payment.BookingId,
+                payment.Amount.Amount,
+                payment.Amount.CurrencyId,
+                payment.IdempotencyKey),
+            cancellationToken);
+
+        payment.MarkPending(created.ProviderPaymentId, now);
 
         foreach (var domainEvent in payment.DomainEvents)
         {
@@ -97,10 +110,10 @@ public sealed class CreatePaymentCommandHandler(
         payment.ClearDomainEvents();
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Map(payment);
+        return Map(payment, created.RedirectUrl);
     }
 
-    private static CreatePaymentResult Map(Payment payment)
+    private static CreatePaymentResult Map(Payment payment, string? redirectUrl = null)
         => new(
             payment.Id,
             payment.BookingId,
@@ -110,5 +123,6 @@ public sealed class CreatePaymentCommandHandler(
             payment.Amount.CurrencyId,
             payment.IdempotencyKey,
             payment.ExpiresAtUtc,
-            payment.AggregateVersion);
+            payment.ProviderPaymentId,
+            redirectUrl);
 }

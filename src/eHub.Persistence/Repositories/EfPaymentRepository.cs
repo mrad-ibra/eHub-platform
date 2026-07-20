@@ -26,6 +26,15 @@ public sealed class EfPaymentRepository(EHubDbContext db) : IPaymentRepository
                 || p.Status == PaymentStatusCode.Authorized)
             .FirstOrDefaultAsync(cancellationToken);
 
+    public Task<Payment?> GetByProviderPaymentIdAsync(
+        string provider,
+        string providerPaymentId,
+        CancellationToken cancellationToken = default)
+        => Query()
+            .Where(p => p.Provider == PaymentProviderCode.Parse(provider))
+            .Where(p => p.ProviderPaymentId == providerPaymentId)
+            .FirstOrDefaultAsync(cancellationToken);
+
     public async Task<IReadOnlyList<Payment>> ListExpiredAsync(
         DateTime nowUtc,
         int take,

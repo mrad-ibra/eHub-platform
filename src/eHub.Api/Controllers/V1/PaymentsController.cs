@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using eHub.Application.Identity.Authorization;
+using eHub.Application.Payments;
 using eHub.Application.Payments.Commands.CancelPayment;
 using eHub.Application.Payments.Commands.CreatePayment;
 using eHub.Application.Payments.Queries.GetPayment;
@@ -20,7 +21,7 @@ public sealed class PaymentsController(ISender sender) : ControllerBase
     public const string IdempotencyHeader = "Idempotency-Key";
 
     [HttpPost]
-    [Authorize(Policy = AuthPolicies.BookingsCreate)]
+    [Authorize(Policy = AuthPolicies.PaymentsCreate)]
     [ProducesResponseType(typeof(CreatePaymentResult), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -40,7 +41,7 @@ public sealed class PaymentsController(ISender sender) : ControllerBase
             new CreatePaymentCommand(
                 request.BookingId,
                 keyValues.ToString()!,
-                request.Provider ?? "TEST"),
+                request.Provider ?? PaymentProviderCodes.Test),
             cancellationToken);
 
         return CreatedAtAction(
@@ -50,7 +51,7 @@ public sealed class PaymentsController(ISender sender) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Policy = AuthPolicies.BookingsRead)]
+    [Authorize(Policy = AuthPolicies.PaymentsRead)]
     [ProducesResponseType(typeof(PaymentDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -63,7 +64,7 @@ public sealed class PaymentsController(ISender sender) : ControllerBase
     }
 
     [HttpPost("{id:guid}/cancel")]
-    [Authorize(Policy = AuthPolicies.BookingsCreate)]
+    [Authorize(Policy = AuthPolicies.PaymentsCancel)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -75,4 +76,4 @@ public sealed class PaymentsController(ISender sender) : ControllerBase
     }
 }
 
-public sealed record CreatePaymentRequest(Guid BookingId, string? Provider = "TEST");
+public sealed record CreatePaymentRequest(Guid BookingId, string? Provider = PaymentProviderCodes.Test);

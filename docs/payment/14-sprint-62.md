@@ -1,39 +1,21 @@
-# Sprint 6.2 — Payment Application + Persistence
+# Sprint 6.2 — APPROVED / CLOSED
 
-**Status:** READY FOR ARCHITECT REVIEW  
-**Depends on:** Sprint 6.1 Phase 1 Domain — **APPROVED**
+**Status:** **APPROVED / CLOSED**  
+**Date:** 2026-07-20  
 
-## Exit criteria (checklist)
+## Closeout fixes (architect)
 
-| Item | Status |
-|------|--------|
-| `CreatePaymentCommand` + Handler + Validator | ✅ |
-| `CancelPaymentCommand` / `ExpirePaymentCommand` | ✅ |
-| `GetPaymentQuery` | ✅ |
-| `IPaymentRepository` + `EfPaymentRepository` + InMemory | ✅ |
-| EF configurations + migration `AddPaymentPersistence` | ✅ |
-| Outbox enqueue on create/cancel/expire | ✅ |
-| `POST/GET /api/v1/payments` (+ cancel) | ✅ |
-| Unit tests (domain + handlers) | ✅ |
-| PostgreSQL IT (Testcontainers, skip without Docker) | ✅ |
+| Item | Done |
+|------|------|
+| Permissions `payments.create` / `read` / `cancel` / `refund` | ✅ AuthPolicies + appsettings roles + controller |
+| `PaymentProviderCodes.Test` constant | ✅ |
+| Remove `AggregateVersion` from Payment DTOs (future: ETag) | ✅ Documented in BR decision log |
+| Cancel actors BR-PAY-016 (Renter / Host no / Admin yes) | ✅ |
 
-## Explicit non-goals (Sprint 6.3+)
+## Delivered earlier in 6.2
 
-- Provider ACL / Stripe SDK  
-- Webhook endpoint + signature + inbox  
-- RetryPayment (needs provider)  
-- Outbox consumer → `Booking.Confirm`  
-- Refund HTTP API  
+CreatePayment, Cancel, Expire, GetPayment, EF + migration, Outbox on write, API, unit + PG IT.
 
-## Note on prior review ZIP
+## Handoff
 
-Current tree already has:
-
-- `ApplyTransition` / `MarkChanged` for AggregateVersion (not `Raise`)  
-- `AssetRentalRules.PreparationBufferDays` with CreateBooking fallback to default  
-
-If a review ZIP still shows manual `AggregateVersion++` / hardcoded buffer only, it is stale relative to this branch.
-
-## Next
-
-After **APPROVED** → **Sprint 6.3** Provider adapter + Webhook + signature + inbox idempotency.
+→ **Sprint 6.3 — Payment Provider & Webhook Integration** (`docs/payment/15-sprint-63.md`)

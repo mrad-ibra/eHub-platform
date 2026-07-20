@@ -3,6 +3,7 @@ using eHub.Application.Common.Context;
 using eHub.Application.Common.Messaging;
 using eHub.Application.Common.Persistence;
 using eHub.Application.Common.Time;
+using eHub.Application.Identity.Authorization;
 using eHub.Application.Payments.Abstractions;
 using eHub.Domain.Exceptions;
 using eHub.Localization;
@@ -36,7 +37,12 @@ public sealed class CancelPaymentCommandHandler(
         var booking = await bookings.GetByIdAsync(payment.BookingId, cancellationToken)
             ?? throw new NotFoundException(ErrorResources.Get(ErrorCodes.NotFound));
 
-        if (booking.RenterId != userId)
+        var isRenter = booking.RenterId == userId;
+        var isAdmin = currentUser.IsInRole("Admin")
+            && currentUser.HasPermission(AuthPolicies.PaymentsCancel);
+
+        // BR-PAY-016: Host cannot cancel Payment. Renter self-service OR Admin (fraud/dispute).
+        if (!isRenter && !isAdmin)
         {
             throw new ForbiddenAccessException(ErrorResources.Get(ErrorCodes.PaymentAccessDenied));
         }

@@ -1,5 +1,7 @@
 using eHub.Application.Common.Time;
 
+using eHub.Application.Configuration;
+
 using eHub.Domain.Bookings;
 
 using eHub.Domain.Common;
@@ -171,6 +173,54 @@ public sealed class PostgresBookingFixture : IAsyncLifetime
         services.AddScoped<EfPaymentRepository>();
 
         services.AddScoped<EfOutboxWriter>();
+
+        return services.BuildServiceProvider();
+
+    }
+
+
+
+    public ServiceProvider CreatePaymentServices(IClock? clock = null)
+
+    {
+
+        var services = new ServiceCollection();
+
+        services.AddSingleton(clock ?? new FixedClock(new DateTime(2026, 7, 19, 12, 0, 0, DateTimeKind.Utc)));
+
+        services.Configure<PaymentProviderOptions>(o =>
+
+        {
+
+            o.Fake.WebhookSecret = "pg-test-webhook-secret";
+
+            o.Fake.TimestampToleranceSeconds = 300;
+
+        });
+
+        services.AddDbContext<EHubDbContext>(o =>
+
+            o.UseNpgsql(ConnectionString, npgsql =>
+
+                npgsql.MigrationsAssembly(typeof(EHubDbContext).Assembly.FullName)));
+
+        services.AddScoped<EfUnitOfWork>();
+
+        services.AddScoped<EfBookingRepository>();
+
+        services.AddScoped<EfPaymentRepository>();
+
+        services.AddScoped<EfPaymentWebhookInboxStore>();
+
+        services.AddScoped<EfOutboxWriter>();
+
+        services.AddSingleton<eHub.Application.Payments.Abstractions.IPaymentProvider, eHub.Infrastructure.Payments.FakePaymentProvider>();
+
+        services.AddSingleton<eHub.Application.Payments.Abstractions.IPaymentProviderResolver, eHub.Infrastructure.Payments.PaymentProviderResolver>();
+
+        services.AddScoped<eHub.Application.Payments.Commands.ProcessWebhook.ProcessWebhookCommandHandler>();
+
+        services.AddScoped<eHub.Infrastructure.Jobs.PaymentOutboxProcessor>();
 
         return services.BuildServiceProvider();
 

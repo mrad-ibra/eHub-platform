@@ -22,7 +22,6 @@ public sealed record PaymentDetailDto(
     string? FailureReason,
     DateTime? PaidAtUtc,
     DateTime? ExpiresAtUtc,
-    int AggregateVersion,
     DateTime CreatedAtUtc);
 
 public sealed class GetPaymentQueryHandler(
@@ -61,6 +60,5 @@ public sealed class GetPaymentQueryHandler(
             payment.FailureReason,
             payment.PaidAtUtc,
             payment.ExpiresAtUtc,
-            payment.AggregateVersion,
             payment.CreatedAtUtc);
 }

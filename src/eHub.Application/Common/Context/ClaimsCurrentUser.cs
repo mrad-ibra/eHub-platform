@@ -73,6 +73,17 @@ public sealed class ClaimsCurrentUser : ICurrentUser
             || Roles.Contains(role, StringComparer.OrdinalIgnoreCase);
     }
 
+    public bool HasPermission(string permission)
+    {
+        if (string.IsNullOrWhiteSpace(permission) || _principal is null)
+        {
+            return false;
+        }
+
+        return _principal.FindAll(Identity.Authorization.AuthPolicies.PermissionClaimType)
+            .Any(claim => string.Equals(claim.Value, permission, StringComparison.OrdinalIgnoreCase));
+    }
+
     public Guid RequireUserId()
     {
         if (UserId is not { } userId)

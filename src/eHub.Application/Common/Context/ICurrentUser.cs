@@ -14,5 +14,6 @@ public interface ICurrentUser
     IReadOnlyList<string> Roles { get; }
 
     bool IsInRole(string role);
+    bool HasPermission(string permission);
     Guid RequireUserId();
 }
